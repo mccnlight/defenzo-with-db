@@ -87,7 +87,7 @@ export default function NewsCard({ article, compact = false }: NewsCardProps) {
         </View>
         <Text style={styles.date}>{article.date}</Text>
       </View>
-
+      
       <Text 
         style={[
           styles.title,
@@ -103,7 +103,7 @@ export default function NewsCard({ article, compact = false }: NewsCardProps) {
           {article.summary}
         </Text>
       )}
-
+        
       <View style={styles.footer}>
         {article.views !== undefined && (
           <View style={styles.viewsContainer}>

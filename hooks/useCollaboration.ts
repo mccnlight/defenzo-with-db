@@ -14,7 +14,7 @@ export const useCollaboration = (initialFile: string) => {
 
     useEffect(() => {
         // Подключаемся к WebSocket серверу
-        const ws = new WebSocket('ws://192.168.1.102:8081');
+        const ws = new WebSocket('ws://192.168.140.196:8081');
         wsRef.current = ws;
 
         ws.onopen = () => {

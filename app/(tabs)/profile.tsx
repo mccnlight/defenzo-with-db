@@ -8,22 +8,13 @@ import {
   Image,
   Alert,
   ActivityIndicator,
-  Switch
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { 
   Settings, 
-  Medal, 
-  Award, 
-  Star,
+  Award,
   LogOut,
   ChevronRight,
-  User,
-  Mail,
-  Bell,
-  Lock,
-  Globe,
-  Moon
 } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Colors from '@/constants/Colors';
@@ -33,90 +24,11 @@ import { Link, useRouter } from 'expo-router';
 import SecurityStats from '@/components/profile/SecurityStats';
 import { getProfile, uploadProfilePicture, logout, User as ApiUser, BASE_URL } from '@/app/services/api';
 
-interface SettingsSectionProps {
-  title: string;
-  children: React.ReactNode;
-}
-
-const SettingsSection = ({ title, children }: SettingsSectionProps) => (
-  <View style={styles.section}>
-    <Text style={styles.sectionTitle}>{title}</Text>
-    <View style={styles.sectionContent}>
-      {children}
-    </View>
-  </View>
-);
-
-interface SettingsItemProps {
-  icon: React.ReactNode;
-  title: string;
-  value?: string;
-  onPress?: () => void;
-  isSwitch?: boolean;
-  switchValue?: boolean;
-  onSwitchChange?: (value: boolean) => void;
-}
-
-const SettingsItem = ({ 
-  icon, 
-  title, 
-  value, 
-  onPress, 
-  isSwitch, 
-  switchValue,
-  onSwitchChange 
-}: SettingsItemProps) => (
-  <TouchableOpacity 
-    style={styles.settingsItem}
-    onPress={onPress}
-    disabled={isSwitch}
-  >
-    <View style={styles.settingsItemLeft}>
-      {icon}
-      <Text style={styles.settingsItemTitle}>{title}</Text>
-    </View>
-    <View style={styles.settingsItemRight}>
-      {isSwitch ? (
-        <Switch
-          value={switchValue}
-          onValueChange={onSwitchChange}
-          trackColor={{ false: Colors.dark.border, true: Colors.dark.primary }}
-          thumbColor={Colors.dark.text}
-        />
-      ) : (
-        <>
-          {value && <Text style={styles.settingsItemValue}>{value}</Text>}
-          <ChevronRight size={20} color={Colors.dark.text} style={{ opacity: 0.6 }} />
-        </>
-      )}
-    </View>
-  </TouchableOpacity>
-);
-
 export default function ProfileScreen() {
   const router = useRouter();
   const [user, setUser] = useState<ApiUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
-  const [darkMode, setDarkMode] = useState(true);
-  const [notifications, setNotifications] = useState(true);
-
-  const statItems = [
-    { 
-      id: 'badges', 
-      title: 'Badges Earned', 
-      value: 12,
-      icon: Award,
-      color: Colors.dark.warning
-    },
-    { 
-      id: 'points', 
-      title: 'Total Points', 
-      value: '2,450',
-      icon: Star,
-      color: Colors.dark.secondary
-    },
-  ];
 
   useEffect(() => {
     loadProfile();
@@ -165,7 +77,7 @@ export default function ProfileScreen() {
       </SafeAreaView>
     );
   }
-  
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
@@ -207,9 +119,6 @@ export default function ProfileScreen() {
                     </Text>
                   </View>
                 )}
-                <View style={styles.badgeContainer}>
-                  <Medal color="#FFD700" size={20} />
-                </View>
                 {uploading && (
                   <View style={styles.uploadingOverlay}>
                     <ActivityIndicator color={Colors.dark.text} />
@@ -230,31 +139,21 @@ export default function ProfileScreen() {
 
         <SecurityStats />
         
-        <View style={styles.statsGrid}>
-          {statItems.map((item) => {
-            const Icon = item.icon;
-            return (
-              <View key={item.id} style={styles.statItem}>
-                <View style={[styles.statIconContainer, {
-                  backgroundColor: item.color + '20'
-                }]}>
-                  <Icon color={item.color} size={24} />
-                </View>
-                <Text style={styles.statValue}>{item.value}</Text>
-                <Text style={styles.statTitle}>{item.title}</Text>
-              </View>
-            );
-          })}
-        </View>
-        
         <Link href="/(screens)/badges" asChild>
-          <TouchableOpacity style={styles.menuItem}>
-            <Award color={Colors.dark.warning} size={22} />
-            <Text style={styles.menuItemText}>Badges & Certificates</Text>
-            <ChevronRight color={Colors.dark.text} size={20} />
+          <TouchableOpacity style={styles.badgesButton}>
+            <View style={styles.badgesContent}>
+              <View style={styles.badgesIconContainer}>
+                <Award color={Colors.dark.warning} size={24} />
+              </View>
+              <View style={styles.badgesTextContainer}>
+                <Text style={styles.badgesTitle}>Badges & Certificates</Text>
+                <Text style={styles.badgesSubtitle}>View your achievements and progress</Text>
+              </View>
+            </View>
+            <ChevronRight color={Colors.dark.text} size={24} style={styles.badgesArrow} />
           </TouchableOpacity>
         </Link>
-
+        
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
           <LogOut color={Colors.dark.error} size={20} />
           <Text style={styles.logoutText}>Log Out</Text>
@@ -296,7 +195,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: Layout.spacing.md,
-    paddingBottom: 120, // Extra padding for bottom tab bar
+    paddingBottom: Layout.spacing.xxl,
   },
   profileSection: {
     marginBottom: Layout.spacing.lg,
@@ -339,19 +238,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  badgeContainer: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    width: 30,
-    height: 30,
-    borderRadius: Layout.borderRadius.round,
-    backgroundColor: Colors.dark.card,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: Colors.dark.background,
-  },
   profileInfo: {
     flex: 1,
   },
@@ -380,136 +266,56 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.sm,
     color: Colors.dark.text,
   },
-  statsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Layout.spacing.md,
-    marginBottom: Layout.spacing.lg,
-  },
-  statItem: {
-    flex: 1,
-    minWidth: '45%',
-    backgroundColor: Colors.dark.card,
-    borderRadius: Layout.borderRadius.large,
-    padding: Layout.spacing.md,
-    alignItems: 'center',
-  },
-  statIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: Layout.borderRadius.round,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: Layout.spacing.sm,
-  },
-  statValue: {
-    fontFamily: fonts.heading,
-    fontSize: fontSizes.xl,
-    color: Colors.dark.text,
-    marginBottom: Layout.spacing.xs,
-  },
-  statTitle: {
-    fontFamily: fonts.body,
-    fontSize: fontSizes.sm,
-    color: Colors.dark.text,
-    opacity: 0.7,
-    textAlign: 'center',
-  },
-  section: {
+  badgesButton: {
     backgroundColor: Colors.dark.card,
     borderRadius: Layout.borderRadius.large,
     padding: Layout.spacing.lg,
-    marginBottom: Layout.spacing.lg,
-  },
-  sectionTitle: {
-    fontFamily: fonts.bodyBold,
-    fontSize: fontSizes.md,
-    color: Colors.dark.text,
     marginBottom: Layout.spacing.md,
+    borderWidth: 1,
+    borderColor: Colors.dark.border,
   },
-  sectionContent: {
-    backgroundColor: Colors.dark.card,
-    borderRadius: Layout.borderRadius.large,
-    marginHorizontal: Layout.spacing.md,
-  },
-  settingsItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: Layout.spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.dark.border,
-  },
-  settingsItemLeft: {
+  badgesContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Layout.spacing.md,
   },
-  settingsItemTitle: {
-    fontFamily: fonts.body,
-    fontSize: fontSizes.md,
+  badgesIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: Layout.borderRadius.medium,
+    backgroundColor: Colors.dark.warning + '20',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: Layout.spacing.md,
+  },
+  badgesTextContainer: {
+    flex: 1,
+  },
+  badgesTitle: {
+    fontFamily: fonts.heading,
+    fontSize: fontSizes.lg,
     color: Colors.dark.text,
-  },
-  settingsItemRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Layout.spacing.sm,
-  },
-  settingsItemValue: {
-    fontFamily: fonts.body,
-    fontSize: fontSizes.md,
-    color: Colors.dark.text,
-    opacity: 0.6,
-  },
-  progressContainer: {
-    marginBottom: Layout.spacing.sm,
-  },
-  progressBar: {
-    height: 6,
-    backgroundColor: Colors.dark.background,
-    borderRadius: Layout.borderRadius.round,
     marginBottom: Layout.spacing.xs,
-    overflow: 'hidden',
   },
-  progressFill: {
-    height: '100%',
-    backgroundColor: Colors.dark.primary,
-    borderRadius: Layout.borderRadius.round,
-  },
-  progressText: {
-    fontFamily: fonts.bodyMedium,
-    fontSize: fontSizes.sm,
-    color: Colors.dark.text,
-  },
-  progressDescription: {
+  badgesSubtitle: {
     fontFamily: fonts.body,
     fontSize: fontSizes.sm,
     color: Colors.dark.text,
     opacity: 0.7,
   },
-  menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.dark.card,
-    borderRadius: Layout.borderRadius.large,
-    padding: Layout.spacing.md,
-    marginBottom: Layout.spacing.md,
-  },
-  menuItemText: {
-    flex: 1,
-    fontFamily: fonts.bodyMedium,
-    fontSize: fontSizes.md,
-    color: Colors.dark.text,
-    marginLeft: Layout.spacing.md,
+  badgesArrow: {
+    position: 'absolute',
+    right: Layout.spacing.lg,
+    top: '50%',
+    marginTop: -12,
+    opacity: 0.6,
   },
   logoutButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Colors.dark.card,
+    backgroundColor: Colors.dark.error + '20',
     borderRadius: Layout.borderRadius.large,
     padding: Layout.spacing.md,
-    marginTop: Layout.spacing.md,
     gap: Layout.spacing.sm,
   },
   logoutText: {

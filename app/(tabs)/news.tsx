@@ -100,16 +100,16 @@ export default function NewsScreen() {
             const Icon = item.icon;
             const isActive = activeCategory === item.id;
             return (
-              <TouchableOpacity 
-                style={[
+            <TouchableOpacity 
+              style={[
                   styles.categoryButton,
                   isActive && [
                     styles.activeCategoryButton,
                     { borderColor: item.color }
                   ]
-                ]}
+              ]}
                 onPress={() => setActiveCategory(item.id)}
-              >
+            >
                 <View style={[
                   styles.iconContainer,
                   { backgroundColor: isActive ? item.color + '20' : 'transparent' }
@@ -119,13 +119,13 @@ export default function NewsScreen() {
                     color={isActive ? item.color : Colors.dark.text} 
                   />
                 </View>
-                <Text style={[
+              <Text style={[
                   styles.categoryLabel,
                   isActive && { color: item.color }
-                ]}>
-                  {item.label}
-                </Text>
-              </TouchableOpacity>
+              ]}>
+                {item.label}
+              </Text>
+            </TouchableOpacity>
             );
           }}
         />

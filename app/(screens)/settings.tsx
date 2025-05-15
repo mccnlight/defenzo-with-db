@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   View, 
   Text, 
@@ -23,6 +23,10 @@ import Colors from '@/constants/Colors';
 import Layout from '@/constants/Layout';
 import { fonts, fontSizes } from '@/constants/Fonts';
 import { router } from 'expo-router';
+import FAQModal from '../components/FAQModal';
+import AboutModal from '../components/AboutModal';
+import TermsModal from '../components/TermsModal';
+import PrivacyModal from '../components/PrivacyModal';
 
 interface SettingsItemProps {
   icon: React.ReactNode;
@@ -68,6 +72,11 @@ const SettingsItem = ({
 );
 
 export default function SettingsScreen() {
+  const [showFAQ, setShowFAQ] = useState(false);
+  const [showAbout, setShowAbout] = useState(false);
+  const [showTerms, setShowTerms] = useState(false);
+  const [showPrivacy, setShowPrivacy] = useState(false);
+  
   const handleEmailSupport = () => {
     Linking.openURL('mailto:support@defenzo.com');
   };
@@ -78,6 +87,23 @@ export default function SettingsScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
+      <FAQModal 
+        visible={showFAQ}
+        onClose={() => setShowFAQ(false)}
+      />
+      <AboutModal 
+        visible={showAbout}
+        onClose={() => setShowAbout(false)}
+      />
+      <TermsModal 
+        visible={showTerms}
+        onClose={() => setShowTerms(false)}
+      />
+      <PrivacyModal 
+        visible={showPrivacy}
+        onClose={() => setShowPrivacy(false)}
+      />
+      
       <View style={styles.header}>
         <TouchableOpacity 
           style={styles.backButton}
@@ -99,7 +125,7 @@ export default function SettingsScreen() {
               icon={<HelpCircle size={24} color={Colors.dark.primary} />}
               title="FAQ"
               description="Get answers to common questions"
-              onPress={() => console.log("FAQ pressed")}
+              onPress={() => setShowFAQ(true)}
             />
             <SettingsItem
               icon={<Mail size={24} color={Colors.dark.accent} />}
@@ -119,13 +145,13 @@ export default function SettingsScreen() {
               icon={<Info size={24} color={Colors.dark.secondary} />}
               title="About Us"
               description="Learn more about Defenzo"
-              onPress={() => console.log("About Us pressed")}
+              onPress={() => setShowAbout(true)}
             />
             <SettingsItem
               icon={<Star size={24} color={Colors.dark.warning} />}
               title="Rate App"
               description="Share your feedback"
-              onPress={() => console.log("Rate App pressed")}
+              onPress={() => Linking.openURL('market://details?id=com.defenzo.app')}
               isLast
               isExternal
             />
@@ -139,13 +165,13 @@ export default function SettingsScreen() {
               icon={<FileText size={24} color={Colors.dark.error} />}
               title="Terms of Service"
               description="Read our terms of service"
-              onPress={() => console.log("Terms pressed")}
+              onPress={() => setShowTerms(true)}
             />
             <SettingsItem
               icon={<Shield size={24} color={Colors.dark.primary} />}
               title="Privacy Policy"
               description="Learn how we protect your data"
-              onPress={() => console.log("Privacy pressed")}
+              onPress={() => setShowPrivacy(true)}
               isLast
             />
           </View>

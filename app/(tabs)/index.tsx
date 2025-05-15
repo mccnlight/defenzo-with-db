@@ -135,14 +135,14 @@ export default function HomeScreen() {
         
         {!isLoading && (
           <>
-            <SecurityScoreCard />
-            
-            {continuelearningCourses.length > 0 && (
+        <SecurityScoreCard />
+        
+        {continuelearningCourses.length > 0 && (
               <View style={styles.section}>
-                <View style={styles.sectionHeader}>
-                  <Text style={styles.sectionTitle}>Continue Learning</Text>
-                </View>
-                
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Continue Learning</Text>
+            </View>
+            
                 <TouchableOpacity 
                   style={styles.featuredCourse}
                   onPress={() => router.push({
@@ -150,28 +150,28 @@ export default function HomeScreen() {
                     params: { id: featuredCourse.id }
                   })}
                 >
-                  <LinearGradient
-                    colors={['#2563EB', '#0D9488']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={styles.featuredCourseGradient}
-                  >
-                    <View style={styles.featuredCourseContent}>
-                      <View style={styles.featuredCourseInfo}>
-                        <Text style={styles.featuredCourseCategory}>CONTINUE</Text>
+              <LinearGradient
+                colors={['#2563EB', '#0D9488']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.featuredCourseGradient}
+              >
+                <View style={styles.featuredCourseContent}>
+                  <View style={styles.featuredCourseInfo}>
+                    <Text style={styles.featuredCourseCategory}>CONTINUE</Text>
                         <Text style={styles.featuredCourseTitle} numberOfLines={2}>
                           {featuredCourse.title}
                         </Text>
-                        <Text style={styles.featuredCourseProgress}>
-                          {featuredCourse.progress}% Complete
-                        </Text>
-                      </View>
-                      <View style={styles.featuredCourseImageContainer}>
-                        <Shield color="white" size={48} />
-                      </View>
-                    </View>
-                  </LinearGradient>
-                </TouchableOpacity>
+                    <Text style={styles.featuredCourseProgress}>
+                      {featuredCourse.progress}% Complete
+                    </Text>
+                  </View>
+                  <View style={styles.featuredCourseImageContainer}>
+                    <Shield color="white" size={48} />
+                  </View>
+                </View>
+              </LinearGradient>
+            </TouchableOpacity>
               </View>
             )}
 
@@ -211,12 +211,12 @@ const LatestAchievements = ({ achievements }: LatestAchievementsProps) => {
         </View>
         <ChevronRight size={20} color={Colors.dark.text} style={{ opacity: 0.6 }} />
       </TouchableOpacity>
-      
-      <ScrollView 
-        horizontal 
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.achievementsContainer}
-      >
+        
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.achievementsContainer}
+        >
         {achievements.map((achievement: Achievement) => (
           <TouchableOpacity 
             key={achievement.id} 
@@ -251,7 +251,7 @@ const LatestAchievements = ({ achievements }: LatestAchievementsProps) => {
             </View>
           </TouchableOpacity>
         ))}
-      </ScrollView>
+        </ScrollView>
     </>
   );
 };
@@ -307,14 +307,14 @@ const SecurityNewsPreview = () => {
         { backgroundColor: categoryColor + '20' }
       ]}>
         <Icon size={24} color={categoryColor} />
-      </View>
-      <View style={styles.newsContent}>
-        <View style={styles.newsHeader}>
+          </View>
+          <View style={styles.newsContent}>
+            <View style={styles.newsHeader}>
           <View style={styles.categoryContainer}>
             <Text style={[styles.newsCategory, { color: categoryColor }]}>
               {latestNews.category}
             </Text>
-            <Text style={styles.newsDate}>{latestNews.date}</Text>
+              <Text style={styles.newsDate}>{latestNews.date}</Text>
           </View>
           {latestNews.views && (
             <View style={styles.viewsContainer}>
@@ -328,15 +328,15 @@ const SecurityNewsPreview = () => {
         <Text style={styles.newsTitle} numberOfLines={2}>
           {latestNews.title}
         </Text>
-        <Text style={styles.newsDescription} numberOfLines={2}>
-          {latestNews.summary}
-        </Text>
-        <View style={styles.newsFooter}>
+            <Text style={styles.newsDescription} numberOfLines={2}>
+              {latestNews.summary}
+            </Text>
+            <View style={styles.newsFooter}>
           <Text style={styles.readMoreText}>Read more</Text>
           <ChevronRight size={16} color={Colors.dark.primary} />
-        </View>
-      </View>
-    </TouchableOpacity>
+            </View>
+          </View>
+        </TouchableOpacity>
   );
 };
 
