@@ -1,8 +1,14 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
+import { Platform } from 'react-native';
+import { router } from 'expo-router';
 
-export const BASE_URL = 'http://192.168.0.11:8081';
+// API Configuration
+const DEV_API_URL = 'http://192.168.1.102:8081';
+const PROD_API_URL = 'https://your-production-url.com'; // Замените на ваш production URL
+
+export const BASE_URL = __DEV__ ? DEV_API_URL : PROD_API_URL;
 export const API_URL = `${BASE_URL}/api`;
 
 // Create axios instance
@@ -10,17 +16,55 @@ const api = axios.create({
   baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
+    'Accept': 'application/json',
   },
+  timeout: 15000, // 15 seconds timeout
 });
 
 // Add token to requests
-api.interceptors.request.use(async (config) => {
-  const token = await AsyncStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+api.interceptors.request.use(
+  async (config) => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+      return config;
+    } catch (error) {
+      console.error('Error adding token to request:', error);
+      return config;
+    }
+  },
+  (error) => {
+    return Promise.reject(error);
   }
-  return config;
-});
+);
+
+// Add response interceptor for error handling
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    if (error.response?.status === 401) {
+      // Unauthorized - clear token and redirect to login
+      await AsyncStorage.removeItem('token');
+      router.replace('/');
+    }
+
+    // Network or timeout error
+    if (!error.response || error.code === 'ECONNABORTED') {
+      console.error('Network or timeout error:', error);
+      throw new Error('Ошибка сети. Пожалуйста, проверьте подключение и попробуйте снова.');
+    }
+
+    // Server error
+    if (error.response?.status >= 500) {
+      console.error('Server error:', error);
+      throw new Error('Ошибка сервера. Пожалуйста, попробуйте позже.');
+    }
+
+    return Promise.reject(error);
+  }
+);
 
 // Auth types
 export interface LoginCredentials {

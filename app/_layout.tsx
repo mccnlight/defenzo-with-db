@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useFrameworkReady } from '@/hooks/useFrameworkReady';
+import { useColorScheme } from 'react-native';
 import { 
   useFonts, 
   Inter_400Regular, 
@@ -14,56 +14,48 @@ import {
 import { SplashScreen } from 'expo-router';
 import { View, StyleSheet } from 'react-native';
 import Colors from '@/constants/Colors';
-import LoginScreen from './auth/LoginScreen';
 
 // Prevent splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  useFrameworkReady();
-
-  const [fontsLoaded, fontError] = useFonts({
+  const [fontsLoaded] = useFonts({
     Inter_400Regular,
     Inter_500Medium,
     Inter_700Bold,
     PlusJakartaSans_700Bold,
   });
 
-  const [authenticated, setAuthenticated] = useState(false);
-
   useEffect(() => {
-    if (fontsLoaded || fontError) {
+    if (fontsLoaded) {
       // Hide splash screen once fonts are loaded
       SplashScreen.hideAsync();
     }
-  }, [fontsLoaded, fontError]);
+  }, [fontsLoaded]);
 
-  if (!fontsLoaded && !fontError) {
-    return null;
+  if (!fontsLoaded) {
+    return null; // This will keep the splash screen visible until fonts are loaded
   }
 
-  if (!authenticated) {
-    return (
-      <View style={styles.container}>
-        <LoginScreen onAuthSuccess={() => setAuthenticated(true)} />
-        <StatusBar style="light" />
-      </View>
-    );
-  }
+  return <RootLayoutNav />;
+}
 
+function RootLayoutNav() {
   return (
-    <View style={styles.container}>
-      <Stack screenOptions={{ 
-        headerShown: false,
-        contentStyle: { 
-          backgroundColor: Colors.dark.background 
-        },
-      }}>
+    <>
+      <StatusBar style="light" />
+      <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen 
+          name="(screens)/badges" 
+          options={{ 
+            headerShown: false,
+            presentation: 'modal'
+          }} 
+        />
         <Stack.Screen name="+not-found" />
       </Stack>
-      <StatusBar style="light" />
-    </View>
+    </>
   );
 }
 

@@ -1,163 +1,150 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { useRouter } from 'expo-router';
+import { Clock, Award } from 'lucide-react-native';
 import Colors from '@/constants/Colors';
 import Layout from '@/constants/Layout';
 import { fonts, fontSizes } from '@/constants/Fonts';
-import { Clock, Users, Star, BookOpen, Lock } from 'lucide-react-native';
-
-interface Course {
-  id: string;
-  title: string;
-  category: string;
-  duration: string;
-  learners: number;
-  rating: number;
-  progress: number;
-  isLocked?: boolean;
-}
+import { Course } from '@/app/data/mockCourses';
 
 interface CourseCardProps {
   course: Course;
 }
 
 export default function CourseCard({ course }: CourseCardProps) {
+  const router = useRouter();
+
+  const handlePress = () => {
+    router.push({
+      pathname: '/(screens)/course/[id]',
+      params: { id: course.id }
+    });
+  };
+
   return (
-    <TouchableOpacity style={styles.card}>
-      <View style={styles.header}>
-        <View style={styles.iconContainer}>
-          {course.isLocked ? (
-            <Lock color={Colors.dark.text} size={24} />
-          ) : (
-            <BookOpen color={Colors.dark.text} size={24} />
-          )}
-        </View>
-        
-        {course.isLocked ? (
-          <View style={styles.lockedBadge}>
-            <Text style={styles.lockedText}>Locked</Text>
-          </View>
-        ) : (
-          <View style={styles.categoryBadge}>
-            <Text style={styles.categoryText}>{course.category}</Text>
-          </View>
-        )}
-      </View>
-      
-      <Text style={styles.title}>{course.title}</Text>
-      
-      <View style={styles.metaContainer}>
-        <View style={styles.metaItem}>
-          <Clock color={Colors.dark.text} size={14} style={styles.metaIcon} />
-          <Text style={styles.metaText}>{course.duration}</Text>
-        </View>
-        
-        <View style={styles.metaItem}>
-          <Users color={Colors.dark.text} size={14} style={styles.metaIcon} />
-          <Text style={styles.metaText}>{course.learners.toLocaleString()}</Text>
-        </View>
-        
-        <View style={styles.metaItem}>
-          <Star color={Colors.dark.warning} size={14} style={styles.metaIcon} />
-          <Text style={styles.metaText}>{course.rating.toFixed(1)}</Text>
-        </View>
-      </View>
-      
-      {!course.isLocked && (
-        <View style={styles.progressContainer}>
-          <View style={styles.progressBar}>
-            <View 
-              style={[
-                styles.progressFill, 
-                { width: `${course.progress}%` }
-              ]} 
-            />
-          </View>
-          <Text style={styles.progressText}>
-            {course.progress === 0 ? 'Start Course' : `${course.progress}% Complete`}
-          </Text>
-        </View>
+    <TouchableOpacity style={styles.container} onPress={handlePress}>
+      {course.image ? (
+        <Image source={{ uri: course.image }} style={styles.image} />
+      ) : (
+        <View style={styles.imagePlaceholder} />
       )}
+      
+      <View style={styles.content}>
+        <View style={styles.header}>
+          <View style={styles.levelBadge}>
+            <Award size={14} color={Colors.dark.warning} />
+            <Text style={styles.levelText}>{course.level}</Text>
+          </View>
+          <View style={styles.durationContainer}>
+            <Clock size={14} color={Colors.dark.text} />
+            <Text style={styles.duration}>{course.duration}</Text>
+          </View>
+        </View>
+
+        <Text style={styles.title}>{course.title}</Text>
+        <Text style={styles.description} numberOfLines={2}>
+          {course.description}
+        </Text>
+
+        <View style={styles.footer}>
+          <View style={styles.progressContainer}>
+            <View style={styles.progressBar}>
+              <View 
+                style={[
+                  styles.progressFill,
+                  { width: `${course.progress}%` }
+                ]} 
+              />
+            </View>
+            <Text style={styles.progressText}>{course.progress}% Complete</Text>
+          </View>
+
+          <View style={styles.tags}>
+            {course.tags?.slice(0, 2).map((tag, index) => (
+              <View key={index} style={styles.tag}>
+                <Text style={styles.tagText}>{tag}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+      </View>
     </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
+  container: {
     backgroundColor: Colors.dark.card,
     borderRadius: Layout.borderRadius.large,
-    padding: Layout.spacing.md,
     marginBottom: Layout.spacing.md,
+    overflow: 'hidden',
+  },
+  image: {
+    width: '100%',
+    height: 160,
+    backgroundColor: Colors.dark.background,
+  },
+  imagePlaceholder: {
+    width: '100%',
+    height: 160,
+    backgroundColor: Colors.dark.background,
+  },
+  content: {
+    padding: Layout.spacing.md,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: Layout.spacing.md,
+    alignItems: 'center',
+    marginBottom: Layout.spacing.sm,
   },
-  iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: Layout.borderRadius.medium,
-    backgroundColor: Colors.dark.primary + '20',
-    justifyContent: 'center',
+  levelBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.dark.warning + '20',
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: Layout.borderRadius.small,
+  },
+  levelText: {
+    fontFamily: fonts.bodyMedium,
+    fontSize: fontSizes.xs,
+    color: Colors.dark.warning,
+    marginLeft: 4,
+  },
+  durationContainer: {
+    flexDirection: 'row',
     alignItems: 'center',
   },
-  categoryBadge: {
-    paddingVertical: 4,
-    paddingHorizontal: Layout.spacing.sm,
-    borderRadius: Layout.borderRadius.round,
-    backgroundColor: Colors.dark.primary + '20',
-  },
-  categoryText: {
-    fontFamily: fonts.bodyMedium,
-    fontSize: fontSizes.xs,
-    color: Colors.dark.primary,
-  },
-  lockedBadge: {
-    paddingVertical: 4,
-    paddingHorizontal: Layout.spacing.sm,
-    borderRadius: Layout.borderRadius.round,
-    backgroundColor: Colors.dark.text + '20',
-  },
-  lockedText: {
-    fontFamily: fonts.bodyMedium,
+  duration: {
+    fontFamily: fonts.body,
     fontSize: fontSizes.xs,
     color: Colors.dark.text,
-    opacity: 0.7,
+    marginLeft: 4,
   },
   title: {
     fontFamily: fonts.heading,
     fontSize: fontSizes.lg,
     color: Colors.dark.text,
-    marginBottom: Layout.spacing.md,
+    marginBottom: Layout.spacing.xs,
   },
-  metaContainer: {
-    flexDirection: 'row',
-    marginBottom: Layout.spacing.md,
-  },
-  metaItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginRight: Layout.spacing.md,
-  },
-  metaIcon: {
-    marginRight: 4,
-    opacity: 0.7,
-  },
-  metaText: {
+  description: {
     fontFamily: fonts.body,
     fontSize: fontSizes.sm,
     color: Colors.dark.text,
     opacity: 0.7,
+    marginBottom: Layout.spacing.md,
+  },
+  footer: {
+    gap: Layout.spacing.sm,
   },
   progressContainer: {
-    marginTop: Layout.spacing.xs,
+    gap: Layout.spacing.xs,
   },
   progressBar: {
-    height: 6,
+    height: 4,
     backgroundColor: Colors.dark.background,
     borderRadius: Layout.borderRadius.round,
-    marginBottom: Layout.spacing.xs,
     overflow: 'hidden',
   },
   progressFill: {
@@ -167,8 +154,22 @@ const styles = StyleSheet.create({
   },
   progressText: {
     fontFamily: fonts.bodyMedium,
-    fontSize: fontSizes.sm,
+    fontSize: fontSizes.xs,
     color: Colors.dark.text,
-    opacity: 0.8,
+  },
+  tags: {
+    flexDirection: 'row',
+    gap: Layout.spacing.xs,
+  },
+  tag: {
+    backgroundColor: Colors.dark.background,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: Layout.borderRadius.small,
+  },
+  tagText: {
+    fontFamily: fonts.body,
+    fontSize: fontSizes.xs,
+    color: Colors.dark.text,
   },
 });

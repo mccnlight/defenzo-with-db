@@ -12,21 +12,42 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { 
   Settings, 
+  Medal, 
+  Award, 
+  Star,
   LogOut,
-  Camera
+  ChevronRight
 } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import Colors from '../../constants/Colors';
-import Layout from '../../constants/Layout';
-import { fonts, fontSizes } from '../../constants/Fonts';
-import { getProfile, uploadProfilePicture, logout, User, BASE_URL } from '../services/api';
-import { useRouter } from 'expo-router';
+import Colors from '@/constants/Colors';
+import Layout from '@/constants/Layout';
+import { fonts, fontSizes } from '@/constants/Fonts';
+import { Link, useRouter } from 'expo-router';
+import SecurityStats from '@/components/profile/SecurityStats';
+import { getProfile, uploadProfilePicture, logout, User, BASE_URL } from '@/app/services/api';
 
 export default function ProfileScreen() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+
+  const statItems = [
+    { 
+      id: 'badges', 
+      title: 'Badges Earned', 
+      value: 12,
+      icon: Award,
+      color: Colors.dark.warning
+    },
+    { 
+      id: 'points', 
+      title: 'Total Points', 
+      value: '2,450',
+      icon: Star,
+      color: Colors.dark.secondary
+    },
+  ];
 
   useEffect(() => {
     loadProfile();
@@ -106,7 +127,6 @@ export default function ProfileScreen() {
                   <Image
                     source={{ uri: `${BASE_URL}/${user.profile_picture_url}` }}
                     style={styles.avatar}
-                    onError={(e) => console.log('Image loading error:', e.nativeEvent.error)}
                   />
                 ) : (
                   <View style={[styles.avatar, styles.avatarPlaceholder]}>
@@ -115,13 +135,13 @@ export default function ProfileScreen() {
                     </Text>
                   </View>
                 )}
-                <View style={styles.cameraButton}>
-                  <Camera color={Colors.dark.text} size={16} />
+                <View style={styles.badgeContainer}>
+                  <Medal color="#FFD700" size={20} />
                 </View>
                 {uploading && (
                   <View style={styles.uploadingOverlay}>
                     <ActivityIndicator color={Colors.dark.text} />
-              </View>
+                  </View>
                 )}
               </TouchableOpacity>
               
@@ -135,17 +155,50 @@ export default function ProfileScreen() {
             </View>
           </LinearGradient>
         </View>
-        
-          <TouchableOpacity
-          style={styles.logoutButton}
-          onPress={handleLogout}
-        >
-          <LogOut color={Colors.dark.error} size={20} />
-          <Text style={styles.logoutText}>Logout</Text>
-        </TouchableOpacity>
 
-        <TouchableOpacity onPress={loadProfile} style={{ marginTop: 16, alignSelf: 'center' }}>
-          <Text style={{ color: Colors.dark.primary, fontFamily: fonts.bodyMedium, fontSize: fontSizes.md }}>Refresh Profile</Text>
+        <SecurityStats />
+        
+        <View style={styles.statsGrid}>
+          {statItems.map((item) => {
+            const Icon = item.icon;
+            return (
+              <View key={item.id} style={styles.statItem}>
+                <View style={[styles.statIconContainer, {
+                  backgroundColor: item.color + '20'
+                }]}>
+                  <Icon color={item.color} size={24} />
+                </View>
+                <Text style={styles.statValue}>{item.value}</Text>
+                <Text style={styles.statTitle}>{item.title}</Text>
+              </View>
+            );
+          })}
+        </View>
+        
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Learning Progress</Text>
+          <View style={styles.progressContainer}>
+            <View style={styles.progressBar}>
+              <View style={[styles.progressFill, { width: '70%' }]} />
+            </View>
+            <Text style={styles.progressText}>70% Complete</Text>
+          </View>
+          <Text style={styles.progressDescription}>
+            Complete more courses to reach Expert level
+          </Text>
+        </View>
+        
+        <Link href="/(screens)/badges" asChild>
+          <TouchableOpacity style={styles.menuItem}>
+            <Award color={Colors.dark.warning} size={22} />
+            <Text style={styles.menuItemText}>Badges & Certificates</Text>
+            <ChevronRight color={Colors.dark.text} size={20} />
+          </TouchableOpacity>
+        </Link>
+        
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+          <LogOut color={Colors.dark.error} size={20} />
+          <Text style={styles.logoutText}>Log Out</Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
@@ -166,57 +219,59 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: Layout.spacing.lg,
-    paddingVertical: Layout.spacing.md,
+    paddingHorizontal: Layout.spacing.md,
+    paddingVertical: Layout.spacing.lg,
   },
   headerTitle: {
     fontFamily: fonts.heading,
-    fontSize: fontSizes.xl,
+    fontSize: fontSizes.xxl,
     color: Colors.dark.text,
   },
   settingsButton: {
-    padding: Layout.spacing.sm,
+    width: 48,
+    height: 48,
+    borderRadius: Layout.borderRadius.round,
+    backgroundColor: Colors.dark.card,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   scrollContent: {
-    padding: Layout.spacing.lg,
+    paddingHorizontal: Layout.spacing.md,
+    paddingBottom: 120, // Extra padding for bottom tab bar
   },
   profileSection: {
-    marginBottom: Layout.spacing.xl,
-  },
-  profileGradient: {
+    marginBottom: Layout.spacing.lg,
     borderRadius: Layout.borderRadius.large,
     overflow: 'hidden',
   },
+  profileGradient: {
+    borderRadius: Layout.borderRadius.large,
+    padding: Layout.spacing.lg,
+  },
   profileContent: {
-    padding: Layout.spacing.xl,
+    flexDirection: 'row',
     alignItems: 'center',
   },
   avatarContainer: {
     position: 'relative',
-    marginBottom: Layout.spacing.lg,
+    marginRight: Layout.spacing.lg,
   },
   avatar: {
-    width: 120,
-    height: 120,
+    width: 80,
+    height: 80,
     borderRadius: Layout.borderRadius.round,
-    backgroundColor: Colors.dark.secondary,
+    borderWidth: 3,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
   avatarPlaceholder: {
+    backgroundColor: Colors.dark.secondary,
     justifyContent: 'center',
     alignItems: 'center',
   },
   avatarPlaceholderText: {
     fontFamily: fonts.heading,
-    fontSize: fontSizes.xxl,
+    fontSize: fontSizes.xl,
     color: Colors.dark.text,
-  },
-  cameraButton: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    backgroundColor: Colors.dark.primary,
-    padding: Layout.spacing.sm,
-    borderRadius: Layout.borderRadius.round,
   },
   uploadingOverlay: {
     ...StyleSheet.absoluteFillObject,
@@ -225,8 +280,21 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  profileInfo: {
+  badgeContainer: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 30,
+    height: 30,
+    borderRadius: Layout.borderRadius.round,
+    backgroundColor: Colors.dark.card,
+    justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 2,
+    borderColor: Colors.dark.background,
+  },
+  profileInfo: {
+    flex: 1,
   },
   profileName: {
     fontFamily: fonts.heading,
@@ -239,32 +307,121 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.md,
     color: Colors.dark.text,
     opacity: 0.8,
-    marginBottom: Layout.spacing.md,
+    marginBottom: Layout.spacing.sm,
   },
   levelBadge: {
-    backgroundColor: Colors.dark.primary + '40',
-    paddingHorizontal: Layout.spacing.md,
+    alignSelf: 'flex-start',
     paddingVertical: Layout.spacing.xs,
+    paddingHorizontal: Layout.spacing.sm,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     borderRadius: Layout.borderRadius.round,
   },
   levelText: {
     fontFamily: fonts.bodyMedium,
     fontSize: fontSizes.sm,
-    color: Colors.dark.primary,
+    color: Colors.dark.text,
+  },
+  statsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Layout.spacing.md,
+    marginBottom: Layout.spacing.lg,
+  },
+  statItem: {
+    flex: 1,
+    minWidth: '45%',
+    backgroundColor: Colors.dark.card,
+    borderRadius: Layout.borderRadius.large,
+    padding: Layout.spacing.md,
+    alignItems: 'center',
+  },
+  statIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: Layout.borderRadius.round,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: Layout.spacing.sm,
+  },
+  statValue: {
+    fontFamily: fonts.heading,
+    fontSize: fontSizes.xl,
+    color: Colors.dark.text,
+    marginBottom: Layout.spacing.xs,
+  },
+  statTitle: {
+    fontFamily: fonts.body,
+    fontSize: fontSizes.sm,
+    color: Colors.dark.text,
+    opacity: 0.7,
+    textAlign: 'center',
+  },
+  section: {
+    backgroundColor: Colors.dark.card,
+    borderRadius: Layout.borderRadius.large,
+    padding: Layout.spacing.lg,
+    marginBottom: Layout.spacing.lg,
+  },
+  sectionTitle: {
+    fontFamily: fonts.bodyBold,
+    fontSize: fontSizes.md,
+    color: Colors.dark.text,
+    marginBottom: Layout.spacing.md,
+  },
+  progressContainer: {
+    marginBottom: Layout.spacing.sm,
+  },
+  progressBar: {
+    height: 6,
+    backgroundColor: Colors.dark.background,
+    borderRadius: Layout.borderRadius.round,
+    marginBottom: Layout.spacing.xs,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: Colors.dark.primary,
+    borderRadius: Layout.borderRadius.round,
+  },
+  progressText: {
+    fontFamily: fonts.bodyMedium,
+    fontSize: fontSizes.sm,
+    color: Colors.dark.text,
+  },
+  progressDescription: {
+    fontFamily: fonts.body,
+    fontSize: fontSizes.sm,
+    color: Colors.dark.text,
+    opacity: 0.7,
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.dark.card,
+    borderRadius: Layout.borderRadius.large,
+    padding: Layout.spacing.md,
+    marginBottom: Layout.spacing.md,
+  },
+  menuItemText: {
+    flex: 1,
+    fontFamily: fonts.bodyMedium,
+    fontSize: fontSizes.md,
+    color: Colors.dark.text,
+    marginLeft: Layout.spacing.md,
   },
   logoutButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Colors.dark.error + '20',
+    backgroundColor: Colors.dark.card,
+    borderRadius: Layout.borderRadius.large,
     padding: Layout.spacing.md,
-    borderRadius: Layout.borderRadius.medium,
-    marginTop: Layout.spacing.xl,
+    marginTop: Layout.spacing.md,
+    gap: Layout.spacing.sm,
   },
   logoutText: {
     fontFamily: fonts.bodyMedium,
     fontSize: fontSizes.md,
     color: Colors.dark.error,
-    marginLeft: Layout.spacing.sm,
   },
 });

@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingVi
 import Colors from '../../constants/Colors';
 import { fonts, fontSizes } from '../../constants/Fonts';
 import { login, register, LoginCredentials, RegisterCredentials } from '../services/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function LoginScreen({ onAuthSuccess }: { onAuthSuccess?: () => void }) {
   const [isLogin, setIsLogin] = useState(true);
@@ -29,11 +30,15 @@ export default function LoginScreen({ onAuthSuccess }: { onAuthSuccess?: () => v
         const credentials: RegisterCredentials = { email, password, full_name: fullName };
         await register(credentials);
         // After registration, log in the user
-        await login({ email, password });
+        const loginResponse = await login({ email, password });
+        if (loginResponse) {
+          await AsyncStorage.setItem('token', loginResponse);
+        }
       }
 
       if (onAuthSuccess) onAuthSuccess();
     } catch (err: any) {
+      console.error('Auth error:', err);
       setError(err.response?.data?.error || 'An error occurred. Please try again.');
     } finally {
       setLoading(false);
