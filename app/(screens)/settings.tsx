@@ -5,7 +5,8 @@ import {
   StyleSheet, 
   ScrollView, 
   TouchableOpacity,
-  Linking
+  Linking,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { 
@@ -17,7 +18,10 @@ import {
   ChevronRight,
   Star,
   ChevronLeft,
-  ExternalLink
+  ExternalLink,
+  KeyRound,
+  Trash2,
+  Smartphone
 } from 'lucide-react-native';
 import Colors from '@/constants/Colors';
 import Layout from '@/constants/Layout';
@@ -27,6 +31,8 @@ import FAQModal from '../components/FAQModal';
 import AboutModal from '../components/AboutModal';
 import TermsModal from '../components/TermsModal';
 import PrivacyModal from '../components/PrivacyModal';
+import TwoFactorModal from '../components/TwoFactorModal';
+import ResetPasswordModal from '../components/ResetPasswordModal';
 
 interface SettingsItemProps {
   icon: React.ReactNode;
@@ -76,6 +82,8 @@ export default function SettingsScreen() {
   const [showAbout, setShowAbout] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
+  const [show2FA, setShow2FA] = useState(false);
+  const [showResetPassword, setShowResetPassword] = useState(false);
   
   const handleEmailSupport = () => {
     Linking.openURL('mailto:support@defenzo.com');
@@ -83,6 +91,27 @@ export default function SettingsScreen() {
 
   const handleBack = () => {
     router.back();
+  };
+
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      'Delete Account',
+      'Are you sure you want to delete your account? This action cannot be undone.',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            // TODO: Implement account deletion
+            Alert.alert('Coming Soon', 'Account deletion will be available in the next update.');
+          },
+        },
+      ],
+    );
   };
 
   return (
@@ -103,6 +132,14 @@ export default function SettingsScreen() {
         visible={showPrivacy}
         onClose={() => setShowPrivacy(false)}
       />
+      <TwoFactorModal
+        visible={show2FA}
+        onClose={() => setShow2FA(false)}
+      />
+      <ResetPasswordModal
+        visible={showResetPassword}
+        onClose={() => setShowResetPassword(false)}
+      />
       
       <View style={styles.header}>
         <TouchableOpacity 
@@ -118,6 +155,31 @@ export default function SettingsScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Security & Account</Text>
+          <View style={styles.sectionContent}>
+            <SettingsItem
+              icon={<Smartphone size={24} color={Colors.dark.warning} />}
+              title="Two-Factor Authentication"
+              description="Add an extra layer of security"
+              onPress={() => setShow2FA(true)}
+            />
+            <SettingsItem
+              icon={<KeyRound size={24} color={Colors.dark.primary} />}
+              title="Reset Password"
+              description="Change your account password"
+              onPress={() => setShowResetPassword(true)}
+            />
+            <SettingsItem
+              icon={<Trash2 size={24} color={Colors.dark.error} />}
+              title="Delete Account"
+              description="Permanently remove your account"
+              onPress={handleDeleteAccount}
+              isLast
+            />
+          </View>
+        </View>
+
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Help & Support</Text>
           <View style={styles.sectionContent}>

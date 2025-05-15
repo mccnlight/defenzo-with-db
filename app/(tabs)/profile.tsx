@@ -15,6 +15,8 @@ import {
   Award,
   LogOut,
   ChevronRight,
+  Shield,
+  Clock,
 } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Colors from '@/constants/Colors';
@@ -24,14 +26,57 @@ import { Link, useRouter } from 'expo-router';
 import SecurityStats from '@/components/profile/SecurityStats';
 import { getProfile, uploadProfilePicture, logout, User as ApiUser, BASE_URL } from '@/app/services/api';
 
+// Security tips that will rotate
+const securityTips = [
+  {
+    title: 'Password Security',
+    tip: 'Use a unique password for each account and make them at least 12 characters long.',
+    icon: '🔐',
+  },
+  {
+    title: 'Two-Factor Authentication',
+    tip: 'Enable 2FA wherever possible to add an extra layer of security to your accounts.',
+    icon: '🔒',
+  },
+  {
+    title: 'Software Updates',
+    tip: 'Keep your software and systems up to date to protect against known vulnerabilities.',
+    icon: '🔄',
+  },
+  {
+    title: 'Phishing Awareness',
+    tip: 'Always verify the sender and be cautious of unexpected emails asking for personal information.',
+    icon: '📧',
+  },
+  {
+    title: 'Public Wi-Fi Safety',
+    tip: 'Use a VPN when connecting to public Wi-Fi networks to protect your data.',
+    icon: '📶',
+  },
+  {
+    title: 'Data Backup',
+    tip: 'Regularly backup your important data to prevent loss from ransomware attacks.',
+    icon: '💾',
+  },
+];
+
 export default function ProfileScreen() {
   const router = useRouter();
   const [user, setUser] = useState<ApiUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [currentTipIndex, setCurrentTipIndex] = useState(0);
 
   useEffect(() => {
     loadProfile();
+    // Rotate tips every 20 minutes
+    const tipInterval = setInterval(() => {
+      setCurrentTipIndex((prev) => (prev + 1) % securityTips.length);
+    }, 1200000);
+
+    return () => {
+      clearInterval(tipInterval);
+    };
   }, []);
 
   const loadProfile = async () => {
@@ -78,6 +123,8 @@ export default function ProfileScreen() {
     );
   }
 
+  const currentTip = securityTips[currentTipIndex];
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
@@ -94,14 +141,14 @@ export default function ProfileScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        <View style={styles.profileSection}>
+        <View style={styles.welcomeSection}>
           <LinearGradient
             colors={[Colors.dark.primary + '40', Colors.dark.secondary + '40']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
-            style={styles.profileGradient}
+            style={styles.welcomeGradient}
           >
-            <View style={styles.profileContent}>
+            <View style={styles.welcomeContent}>
               <TouchableOpacity 
                 style={styles.avatarContainer}
                 onPress={handleUploadPicture}
@@ -126,15 +173,33 @@ export default function ProfileScreen() {
                 )}
               </TouchableOpacity>
               
-              <View style={styles.profileInfo}>
-                <Text style={styles.profileName}>{user?.full_name || 'User'}</Text>
-                <Text style={styles.profileEmail}>{user?.email}</Text>
+              <View style={styles.welcomeInfo}>
+                <Text style={styles.userName}>{user?.full_name || 'User'}</Text>
+                <Text style={styles.userEmail}>{user?.email}</Text>
                 <View style={styles.levelBadge}>
                   <Text style={styles.levelText}>Advanced User</Text>
                 </View>
               </View>
             </View>
           </LinearGradient>
+        </View>
+
+        <View style={styles.securityTipCard}>
+          <View style={styles.tipHeader}>
+            <View style={styles.tipTitleContainer}>
+              <Shield color={Colors.dark.primary} size={20} />
+              <Text style={styles.tipTitle}>Security Tip</Text>
+            </View>
+          </View>
+          <View style={styles.tipContent}>
+            <View style={styles.tipIconContainer}>
+              <Text style={styles.tipEmoji}>{currentTip.icon}</Text>
+            </View>
+            <View style={styles.tipTextContent}>
+              <Text style={styles.tipSubtitle}>{currentTip.title}</Text>
+              <Text style={styles.tipText}>{currentTip.tip}</Text>
+            </View>
+          </View>
         </View>
 
         <SecurityStats />
@@ -195,18 +260,18 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: Layout.spacing.md,
-    paddingBottom: Layout.spacing.xxl,
+    paddingBottom: 120, // Increased padding for better scrolling
   },
-  profileSection: {
+  welcomeSection: {
     marginBottom: Layout.spacing.lg,
     borderRadius: Layout.borderRadius.large,
     overflow: 'hidden',
   },
-  profileGradient: {
+  welcomeGradient: {
     borderRadius: Layout.borderRadius.large,
     padding: Layout.spacing.lg,
   },
-  profileContent: {
+  welcomeContent: {
     flexDirection: 'row',
     alignItems: 'center',
   },
@@ -238,16 +303,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  profileInfo: {
+  welcomeInfo: {
     flex: 1,
+    marginLeft: Layout.spacing.md,
   },
-  profileName: {
+  userName: {
     fontFamily: fonts.heading,
     fontSize: fontSizes.xl,
     color: Colors.dark.text,
     marginBottom: Layout.spacing.xs,
   },
-  profileEmail: {
+  userEmail: {
     fontFamily: fonts.body,
     fontSize: fontSizes.md,
     color: Colors.dark.text,
@@ -265,6 +331,61 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bodyMedium,
     fontSize: fontSizes.sm,
     color: Colors.dark.text,
+  },
+  securityTipCard: {
+    backgroundColor: Colors.dark.card,
+    borderRadius: Layout.borderRadius.large,
+    padding: Layout.spacing.lg,
+    marginBottom: Layout.spacing.lg,
+    borderWidth: 1,
+    borderColor: Colors.dark.border,
+  },
+  tipHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: Layout.spacing.md,
+  },
+  tipTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Layout.spacing.sm,
+  },
+  tipTitle: {
+    fontFamily: fonts.heading,
+    fontSize: fontSizes.md,
+    color: Colors.dark.text,
+  },
+  tipContent: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Layout.spacing.md,
+  },
+  tipIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: Layout.borderRadius.medium,
+    backgroundColor: Colors.dark.primary + '15',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  tipEmoji: {
+    fontSize: 24,
+  },
+  tipTextContent: {
+    flex: 1,
+  },
+  tipSubtitle: {
+    fontFamily: fonts.bodyBold,
+    fontSize: fontSizes.md,
+    color: Colors.dark.text,
+    marginBottom: Layout.spacing.xs,
+  },
+  tipText: {
+    fontFamily: fonts.body,
+    fontSize: fontSizes.sm,
+    color: Colors.dark.text,
+    opacity: 0.8,
+    lineHeight: fontSizes.sm * 1.6,
   },
   badgesButton: {
     backgroundColor: Colors.dark.card,
