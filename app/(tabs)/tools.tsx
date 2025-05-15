@@ -10,7 +10,7 @@ import {
   Platform
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Link as LinkIcon, Lock, ShieldCheck, ShieldAlert, TriangleAlert as AlertTriangle, CircleCheck as CheckCircle2, Search } from 'lucide-react-native';
+import { Link as LinkIcon, Lock, Eye, EyeOff, ShieldAlert, TriangleAlert as AlertTriangle, CircleCheck as CheckCircle2, Search } from 'lucide-react-native';
 import Colors from '@/constants/Colors';
 import Layout from '@/constants/Layout';
 import { fonts, fontSizes } from '@/constants/Fonts';
@@ -21,6 +21,7 @@ import { API_CONFIG } from '@/constants/Config';
 export default function ToolsScreen() {
   const [url, setUrl] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [urlResult, setUrlResult] = useState<null | {
     safe: boolean;
     risk: 'none' | 'low' | 'medium' | 'high';
@@ -232,8 +233,18 @@ export default function ToolsScreen() {
                 placeholderTextColor={Colors.dark.text + '80'}
                 value={password}
                 onChangeText={setPassword}
-                secureTextEntry
+                secureTextEntry={!showPassword}
               />
+              <TouchableOpacity 
+                style={styles.eyeButton} 
+                onPress={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? (
+                  <EyeOff color={Colors.dark.text} size={20} />
+                ) : (
+                  <Eye color={Colors.dark.text} size={20} />
+                )}
+              </TouchableOpacity>
               <TouchableOpacity 
                 style={styles.checkButton} 
                 onPress={checkPassword}
@@ -274,20 +285,6 @@ export default function ToolsScreen() {
               </View>
             )}
           </View>
-          
-          <TouchableOpacity style={styles.additionalToolButton}>
-            <LinearGradient
-              colors={[Colors.dark.primary + '40', Colors.dark.secondary + '40']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.additionalToolGradient}
-            >
-              <ShieldCheck color={Colors.dark.text} size={24} />
-              <Text style={styles.additionalToolText}>
-                Run Complete Security Scan
-              </Text>
-            </LinearGradient>
-          </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -449,22 +446,13 @@ const styles = StyleSheet.create({
     opacity: 0.8,
     marginBottom: Layout.spacing.xs,
   },
-  additionalToolButton: {
-    borderRadius: Layout.borderRadius.large,
-    overflow: 'hidden',
-    marginBottom: Layout.spacing.xl,
-  },
-  additionalToolGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  eyeButton: {
+    width: 48,
+    height: 48,
+    borderRadius: Layout.borderRadius.medium,
+    backgroundColor: Colors.dark.background,
     justifyContent: 'center',
-    padding: Layout.spacing.lg,
-    borderRadius: Layout.borderRadius.large,
-  },
-  additionalToolText: {
-    fontFamily: fonts.bodyMedium,
-    fontSize: fontSizes.md,
-    color: Colors.dark.text,
-    marginLeft: Layout.spacing.md,
+    alignItems: 'center',
+    marginLeft: Layout.spacing.sm,
   },
 });

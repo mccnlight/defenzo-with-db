@@ -1,113 +1,60 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Award, ChevronLeft, Shield, Star, BookOpen } from 'lucide-react-native';
 import Colors from '@/constants/Colors';
 import Layout from '@/constants/Layout';
 import { fonts, fontSizes } from '@/constants/Fonts';
-import { useRouter } from 'expo-router';
-
-const badges = [
-  {
-    id: 'b1',
-    title: 'Security Expert',
-    description: 'Completed all security courses',
-    icon: Shield,
-    color: Colors.dark.primary,
-    earned: true,
-    date: 'Jun 15, 2024',
-  },
-  {
-    id: 'b2',
-    title: 'Course Master',
-    description: 'Finished 10 courses with perfect scores',
-    icon: BookOpen,
-    color: Colors.dark.accent,
-    earned: true,
-    date: 'May 22, 2024',
-  },
-  {
-    id: 'b3',
-    title: 'Rising Star',
-    description: 'Earned 1000 points',
-    icon: Star,
-    color: Colors.dark.warning,
-    earned: true,
-    date: 'May 10, 2024',
-  },
-  {
-    id: 'b4',
-    title: 'Elite Defender',
-    description: 'Complete advanced security training',
-    icon: Award,
-    color: Colors.dark.secondary,
-    earned: false,
-  },
-];
+import { globalAchievements } from '@/app/(tabs)';
 
 export default function BadgesScreen() {
-  const router = useRouter();
-
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
-          <ChevronLeft color={Colors.dark.text} size={24} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Badges & Certificates</Text>
-      </View>
-
       <ScrollView 
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.content}
+        contentContainerStyle={styles.scrollContent}
       >
-        <View style={styles.statsContainer}>
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>3</Text>
-            <Text style={styles.statLabel}>Badges Earned</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>1</Text>
-            <Text style={styles.statLabel}>In Progress</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>75%</Text>
-            <Text style={styles.statLabel}>Completion</Text>
-          </View>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Badges & Certificates</Text>
         </View>
 
-        <Text style={styles.sectionTitle}>Your Badges</Text>
-        
-        <View style={styles.badgesGrid}>
-          {badges.map((badge) => (
-            <View key={badge.id} style={styles.badgeCard}>
-              <View 
-                style={[
-                  styles.badgeIconContainer,
-                  { backgroundColor: badge.color + '20' }
-                ]}
-              >
-                <badge.icon color={badge.color} size={32} />
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Your Achievements</Text>
+          <Text style={styles.sectionDescription}>
+            Track your progress and unlock new achievements as you learn
+          </Text>
+          
+          <View style={styles.achievementsGrid}>
+            {globalAchievements.map((achievement) => (
+              <View key={achievement.id} style={styles.achievementCard}>
+                <View style={[
+                  styles.achievementIcon,
+                  { backgroundColor: achievement.color + '20' }
+                ]}>
+                  <Text style={styles.achievementEmoji}>{achievement.icon}</Text>
+                </View>
+                <View style={styles.achievementContent}>
+                  <Text style={styles.achievementTitle}>{achievement.title}</Text>
+                  <Text style={styles.achievementDescription} numberOfLines={2}>
+                    {achievement.description}
+                  </Text>
+                  <View style={styles.progressContainer}>
+                    <View 
+                      style={[
+                        styles.progressBar,
+                        { 
+                          width: `${achievement.progress}%`,
+                          backgroundColor: achievement.color
+                        }
+                      ]} 
+                    />
+                  </View>
+                  <Text style={[styles.progressText, { color: achievement.color }]}>
+                    {achievement.progress}% Complete
+                  </Text>
+                </View>
               </View>
-              
-              <Text style={styles.badgeTitle}>{badge.title}</Text>
-              <Text style={styles.badgeDescription}>{badge.description}</Text>
-              
-              {badge.earned ? (
-                <View style={styles.earnedContainer}>
-                  <Award color={Colors.dark.warning} size={14} />
-                  <Text style={styles.earnedText}>Earned {badge.date}</Text>
-                </View>
-              ) : (
-                <View style={styles.lockedContainer}>
-                  <Text style={styles.lockedText}>In Progress</Text>
-                </View>
-              )}
-            </View>
-          ))}
+            ))}
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -119,112 +66,82 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.dark.background,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: Layout.spacing.md,
-    paddingVertical: Layout.spacing.lg,
+  scrollContent: {
+    paddingBottom: 120,
   },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: Layout.borderRadius.round,
-    backgroundColor: Colors.dark.card,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: Layout.spacing.md,
+  header: {
+    padding: Layout.spacing.lg,
   },
   headerTitle: {
     fontFamily: fonts.heading,
-    fontSize: fontSizes.xl,
+    fontSize: fontSizes.xxl,
     color: Colors.dark.text,
   },
-  content: {
-    padding: Layout.spacing.md,
-  },
-  statsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    backgroundColor: Colors.dark.card,
-    borderRadius: Layout.borderRadius.large,
+  section: {
     padding: Layout.spacing.lg,
-    marginBottom: Layout.spacing.lg,
   },
-  statItem: {
-    alignItems: 'center',
-  },
-  statValue: {
+  sectionTitle: {
     fontFamily: fonts.heading,
     fontSize: fontSizes.xl,
     color: Colors.dark.text,
     marginBottom: Layout.spacing.xs,
   },
-  statLabel: {
+  sectionDescription: {
     fontFamily: fonts.body,
-    fontSize: fontSizes.sm,
+    fontSize: fontSizes.md,
     color: Colors.dark.text,
-    opacity: 0.7,
+    opacity: 0.8,
+    marginBottom: Layout.spacing.lg,
   },
-  sectionTitle: {
-    fontFamily: fonts.heading,
-    fontSize: fontSizes.lg,
-    color: Colors.dark.text,
-    marginBottom: Layout.spacing.md,
+  achievementsGrid: {
+    gap: Layout.spacing.md,
   },
-  badgesGrid: {
+  achievementCard: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
-  badgeCard: {
-    width: '48%',
     backgroundColor: Colors.dark.card,
     borderRadius: Layout.borderRadius.large,
     padding: Layout.spacing.md,
-    marginBottom: Layout.spacing.md,
   },
-  badgeIconContainer: {
-    width: 64,
-    height: 64,
+  achievementIcon: {
+    width: 48,
+    height: 48,
     borderRadius: Layout.borderRadius.medium,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: Layout.spacing.md,
+    marginRight: Layout.spacing.md,
   },
-  badgeTitle: {
+  achievementEmoji: {
+    fontSize: 24,
+  },
+  achievementContent: {
+    flex: 1,
+  },
+  achievementTitle: {
     fontFamily: fonts.bodyBold,
     fontSize: fontSizes.md,
     color: Colors.dark.text,
     marginBottom: Layout.spacing.xs,
   },
-  badgeDescription: {
+  achievementDescription: {
     fontFamily: fonts.body,
     fontSize: fontSizes.sm,
     color: Colors.dark.text,
-    opacity: 0.7,
-    marginBottom: Layout.spacing.sm,
+    opacity: 0.8,
+    marginBottom: Layout.spacing.md,
+    lineHeight: fontSizes.sm * 1.4,
   },
-  earnedContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  earnedText: {
-    fontFamily: fonts.body,
-    fontSize: fontSizes.xs,
-    color: Colors.dark.warning,
-    marginLeft: Layout.spacing.xs,
-  },
-  lockedContainer: {
-    backgroundColor: Colors.dark.text + '20',
-    paddingVertical: 4,
-    paddingHorizontal: Layout.spacing.sm,
+  progressContainer: {
+    height: 4,
+    backgroundColor: Colors.dark.border,
     borderRadius: Layout.borderRadius.round,
-    alignSelf: 'flex-start',
+    marginBottom: Layout.spacing.xs,
   },
-  lockedText: {
+  progressBar: {
+    height: '100%',
+    borderRadius: Layout.borderRadius.round,
+  },
+  progressText: {
     fontFamily: fonts.bodyMedium,
     fontSize: fontSizes.xs,
-    color: Colors.dark.text,
-    opacity: 0.7,
   },
 }); 

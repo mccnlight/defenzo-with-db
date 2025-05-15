@@ -1,179 +1,193 @@
 import React from 'react';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  TouchableOpacity, 
-  Image 
-} from 'react-native';
+  Eye, 
+  AlertTriangle, 
+  Shield, 
+  TrendingUp,
+  BookOpen,
+  Target,
+  Settings
+} from 'lucide-react-native';
 import Colors from '@/constants/Colors';
 import Layout from '@/constants/Layout';
 import { fonts, fontSizes } from '@/constants/Fonts';
-import { ThumbsUp, MessageCircle, Share2, Bookmark } from 'lucide-react-native';
 
-interface Article {
+interface NewsArticle {
   id: string;
   title: string;
-  summary: string;
   category: string;
   date: string;
-  readTime: string;
-  imageUrl: string;
-  likes: number;
-  comments: number;
+  summary: string;
+  views?: number; // Optional view count
 }
 
 interface NewsCardProps {
-  article: Article;
+  article: NewsArticle;
+  compact?: boolean; // For home page smaller version
 }
 
-export default function NewsCard({ article }: NewsCardProps) {
+export default function NewsCard({ article, compact = false }: NewsCardProps) {
+  const getCategoryInfo = (category: string) => {
+    switch (category.toLowerCase()) {
+      case 'active threats':
+        return {
+          icon: <AlertTriangle size={16} color="#FF6B6B" />,
+          color: '#FF6B6B'
+        };
+      case 'security tips':
+        return {
+          icon: <Shield size={16} color="#4ECB71" />,
+          color: '#4ECB71'
+        };
+      case 'education':
+        return {
+          icon: <BookOpen size={16} color="#4DABF7" />,
+          color: '#4DABF7'
+        };
+      case 'industry news':
+        return {
+          icon: <Target size={16} color="#9775FA" />,
+          color: '#9775FA'
+        };
+      case 'tech updates':
+        return {
+          icon: <Settings size={16} color="#FFB057" />,
+          color: '#FFB057'
+        };
+      default:
+        return {
+          icon: <TrendingUp size={16} color={Colors.dark.primary} />,
+          color: Colors.dark.primary
+        };
+    }
+  };
+
+  const categoryInfo = getCategoryInfo(article.category);
+
   return (
-    <TouchableOpacity style={styles.card}>
-      <View style={styles.imageContainer}>
-        <Image
-          source={{ uri: article.imageUrl }}
-          style={styles.image}
-          resizeMode="cover"
-        />
-        <View style={styles.categoryBadge}>
-          <Text style={styles.categoryText}>{article.category}</Text>
+    <TouchableOpacity 
+      style={[
+        styles.container,
+        compact && styles.compactContainer
+      ]}
+    >
+      <View style={styles.header}>
+        <View style={[
+          styles.categoryBadge,
+          { backgroundColor: categoryInfo.color + '20' }
+        ]}>
+          {categoryInfo.icon}
+          <Text style={[
+            styles.categoryText,
+            { color: categoryInfo.color }
+          ]}>
+            {article.category}
+          </Text>
         </View>
+        <Text style={styles.date}>{article.date}</Text>
       </View>
-      
-      <View style={styles.content}>
-        <Text style={styles.title}>{article.title}</Text>
-        
-        <Text style={styles.summary}>{article.summary}</Text>
-        
-        <View style={styles.metaContainer}>
-          <Text style={styles.date}>{article.date}</Text>
-          <Text style={styles.dot}>•</Text>
-          <Text style={styles.readTime}>{article.readTime} read</Text>
-        </View>
-        
-        <View style={styles.actionsContainer}>
-          <View style={styles.actions}>
-            <TouchableOpacity style={styles.actionButton}>
-              <ThumbsUp size={16} color={Colors.dark.text} />
-              <Text style={styles.actionText}>{article.likes}</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity style={styles.actionButton}>
-              <MessageCircle size={16} color={Colors.dark.text} />
-              <Text style={styles.actionText}>{article.comments}</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity style={styles.actionButton}>
-              <Share2 size={16} color={Colors.dark.text} />
-            </TouchableOpacity>
+
+      <Text 
+        style={[
+          styles.title,
+          compact && styles.compactTitle
+        ]}
+        numberOfLines={compact ? 2 : 3}
+      >
+        {article.title}
+      </Text>
+
+      {!compact && (
+        <Text style={styles.summary} numberOfLines={2}>
+          {article.summary}
+        </Text>
+      )}
+
+      <View style={styles.footer}>
+        {article.views !== undefined && (
+          <View style={styles.viewsContainer}>
+            <Eye size={16} color={Colors.dark.text} style={styles.viewIcon} />
+            <Text style={styles.viewsText}>
+              {article.views.toLocaleString()} views
+            </Text>
           </View>
-          
-          <TouchableOpacity style={styles.bookmarkButton}>
-            <Bookmark size={16} color={Colors.dark.text} />
-          </TouchableOpacity>
-        </View>
+        )}
       </View>
     </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
+  container: {
     backgroundColor: Colors.dark.card,
     borderRadius: Layout.borderRadius.large,
-    overflow: 'hidden',
+    padding: Layout.spacing.md,
     marginBottom: Layout.spacing.md,
   },
-  imageContainer: {
-    position: 'relative',
-    height: 180,
+  compactContainer: {
+    padding: Layout.spacing.sm,
   },
-  image: {
-    width: '100%',
-    height: '100%',
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: Layout.spacing.sm,
   },
   categoryBadge: {
-    position: 'absolute',
-    top: Layout.spacing.md,
-    left: Layout.spacing.md,
-    paddingVertical: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: Layout.spacing.xs,
     paddingHorizontal: Layout.spacing.sm,
     borderRadius: Layout.borderRadius.round,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
   },
   categoryText: {
     fontFamily: fonts.bodyMedium,
     fontSize: fontSizes.xs,
-    color: Colors.dark.text,
-  },
-  content: {
-    padding: Layout.spacing.md,
-  },
-  title: {
-    fontFamily: fonts.heading,
-    fontSize: fontSizes.lg,
-    color: Colors.dark.text,
-    marginBottom: Layout.spacing.sm,
-  },
-  summary: {
-    fontFamily: fonts.body,
-    fontSize: fontSizes.md,
-    color: Colors.dark.text,
-    opacity: 0.8,
-    marginBottom: Layout.spacing.md,
-  },
-  metaContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: Layout.spacing.md,
+    marginLeft: Layout.spacing.xs,
   },
   date: {
     fontFamily: fonts.body,
+    fontSize: fontSizes.xs,
+    color: Colors.dark.text,
+    opacity: 0.6,
+  },
+  title: {
+    fontFamily: fonts.bodyBold,
+    fontSize: fontSizes.md,
+    color: Colors.dark.text,
+    marginBottom: Layout.spacing.sm,
+    lineHeight: fontSizes.md * 1.4,
+  },
+  compactTitle: {
     fontSize: fontSizes.sm,
-    color: Colors.dark.text,
-    opacity: 0.6,
+    marginBottom: Layout.spacing.xs,
   },
-  dot: {
-    marginHorizontal: Layout.spacing.xs,
-    color: Colors.dark.text,
-    opacity: 0.6,
-  },
-  readTime: {
-    fontFamily: fonts.body,
-    fontSize: fontSizes.sm,
-    color: Colors.dark.text,
-    opacity: 0.6,
-  },
-  actionsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingTop: Layout.spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: Colors.dark.border,
-  },
-  actions: {
-    flexDirection: 'row',
-  },
-  actionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginRight: Layout.spacing.md,
-  },
-  actionText: {
+  summary: {
     fontFamily: fonts.body,
     fontSize: fontSizes.sm,
     color: Colors.dark.text,
     opacity: 0.8,
-    marginLeft: Layout.spacing.xs,
+    marginBottom: Layout.spacing.md,
+    lineHeight: fontSizes.sm * 1.4,
   },
-  bookmarkButton: {
-    width: 32,
-    height: 32,
-    borderRadius: Layout.borderRadius.round,
-    backgroundColor: Colors.dark.background,
-    justifyContent: 'center',
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'flex-start',
     alignItems: 'center',
+  },
+  viewsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  viewIcon: {
+    marginRight: Layout.spacing.xs,
+    opacity: 0.6,
+  },
+  viewsText: {
+    fontFamily: fonts.body,
+    fontSize: fontSizes.xs,
+    color: Colors.dark.text,
+    opacity: 0.6,
   },
 });

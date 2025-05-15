@@ -7,7 +7,8 @@ import {
   TouchableOpacity, 
   FlatList,
   TextInput,
-  Modal
+  Modal,
+  Image
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { 
@@ -18,14 +19,18 @@ import {
   Lock, 
   Globe,
   Smartphone,
-  X
+  X,
+  Users,
+  Star,
+  Clock
 } from 'lucide-react-native';
 import Colors from '@/constants/Colors';
 import Layout from '@/constants/Layout';
 import { fonts, fontSizes } from '@/constants/Fonts';
-import CourseCard from '@/components/courses/CourseCard';
 import { mockCourses } from '@/app/data/mockCourses';
-import type { Course } from '@/app/data/mockCourses';
+import type { Course } from '@/types/course';
+import { router } from 'expo-router';
+import { useCourseStore } from '@/app/store/courseStore';
 
 const categories = [
   { id: 'all', name: 'All', icon: BookOpen, color: Colors.dark.primary },
@@ -40,6 +45,58 @@ interface FilterOptions {
   duration?: 'short' | 'medium' | 'long';
 }
 
+interface CourseCardProps {
+  course: Course;
+}
+
+const CourseCard = ({ course }: CourseCardProps) => {
+  return (
+    <TouchableOpacity 
+      style={styles.courseCard}
+      onPress={() => router.push(`/course/${course.id}`)}
+    >
+      <Image 
+        source={course.image ? { uri: course.image } : require('@/assets/images/course-placeholder.png')}
+        style={styles.courseImage}
+      />
+      <View style={styles.courseContent}>
+        <View style={styles.courseHeader}>
+          <View style={styles.levelBadge}>
+            <Text style={styles.levelText}>{course.level}</Text>
+          </View>
+        </View>
+
+        <Text style={styles.courseTitle} numberOfLines={2}>
+          {course.title}
+        </Text>
+        
+        <Text style={styles.courseDescription} numberOfLines={2}>
+          {course.description}
+        </Text>
+
+        <View style={styles.courseFooter}>
+          <View style={styles.footerItem}>
+            <Clock size={14} color={Colors.dark.text} style={styles.footerIcon} />
+            <Text style={styles.footerText}>{course.duration}</Text>
+          </View>
+        </View>
+
+        <View style={styles.progressContainer}>
+          <View style={styles.progressBarBackground}>
+            <View 
+              style={[
+                styles.progressBar, 
+                { width: `${course.progress || 0}%` }
+              ]} 
+            />
+          </View>
+          <Text style={styles.progressText}>{course.progress || 0}% Complete</Text>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+};
+
 export default function CoursesScreen() {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -47,8 +104,10 @@ export default function CoursesScreen() {
   const [showFilters, setShowFilters] = useState(false);
   const [filterOptions, setFilterOptions] = useState<FilterOptions>({});
   
-  const filterCourses = useCallback((courses: Course[]) => {
-    return courses.filter(course => {
+  const { courses } = useCourseStore();
+  
+  const filterCourses = useCallback((coursesToFilter: Course[]) => {
+    return coursesToFilter.filter(course => {
       // Category filter
       if (selectedCategory !== 'all' && course.category !== selectedCategory) {
         return false;
@@ -91,7 +150,7 @@ export default function CoursesScreen() {
     });
   }, [selectedCategory, searchQuery, filterOptions]);
 
-  const filteredCourses = filterCourses(mockCourses);
+  const filteredCourses = filterCourses(courses);
   
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -180,7 +239,9 @@ export default function CoursesScreen() {
       <FlatList
         data={filteredCourses}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <CourseCard course={item} />}
+        renderItem={({ item }) => (
+          <CourseCard course={item} />
+        )}
         contentContainerStyle={styles.coursesList}
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={
@@ -457,5 +518,98 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bodyMedium,
     fontSize: fontSizes.md,
     color: Colors.dark.error,
+  },
+  courseCard: {
+    backgroundColor: Colors.dark.card,
+    borderRadius: Layout.borderRadius.large,
+    marginBottom: Layout.spacing.md,
+    overflow: 'hidden',
+  },
+  courseImage: {
+    width: '100%',
+    height: 160,
+    backgroundColor: Colors.dark.border,
+  },
+  courseContent: {
+    padding: Layout.spacing.md,
+  },
+  courseHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: Layout.spacing.sm,
+  },
+  levelBadge: {
+    paddingVertical: 4,
+    paddingHorizontal: Layout.spacing.sm,
+    backgroundColor: Colors.dark.primary + '20',
+    borderRadius: Layout.borderRadius.round,
+  },
+  levelText: {
+    fontFamily: fonts.bodyMedium,
+    fontSize: fontSizes.xs,
+    color: Colors.dark.primary,
+  },
+  ratingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  ratingText: {
+    fontFamily: fonts.bodyMedium,
+    fontSize: fontSizes.sm,
+    color: Colors.dark.text,
+    marginLeft: Layout.spacing.xs,
+  },
+  courseTitle: {
+    fontFamily: fonts.bodyBold,
+    fontSize: fontSizes.lg,
+    color: Colors.dark.text,
+    marginBottom: Layout.spacing.xs,
+  },
+  courseDescription: {
+    fontFamily: fonts.body,
+    fontSize: fontSizes.sm,
+    color: Colors.dark.text,
+    opacity: 0.8,
+    marginBottom: Layout.spacing.md,
+  },
+  courseFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: Layout.spacing.sm,
+  },
+  footerItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  footerIcon: {
+    marginRight: Layout.spacing.xs,
+    opacity: 0.6,
+  },
+  footerText: {
+    fontFamily: fonts.body,
+    fontSize: fontSizes.xs,
+    color: Colors.dark.text,
+    opacity: 0.6,
+  },
+  progressContainer: {
+    gap: Layout.spacing.xs,
+  },
+  progressBarBackground: {
+    height: 4,
+    backgroundColor: Colors.dark.background,
+    borderRadius: Layout.borderRadius.round,
+    overflow: 'hidden',
+  },
+  progressBar: {
+    height: '100%',
+    backgroundColor: Colors.dark.primary,
+    borderRadius: Layout.borderRadius.round,
+  },
+  progressText: {
+    fontFamily: fonts.bodyMedium,
+    fontSize: fontSizes.xs,
+    color: Colors.dark.text,
+    opacity: 0.7,
   },
 });

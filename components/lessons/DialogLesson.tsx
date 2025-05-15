@@ -11,7 +11,7 @@ import { MessageCircle, ChevronRight } from 'lucide-react-native';
 import Colors from '@/constants/Colors';
 import Layout from '@/constants/Layout';
 import { fonts, fontSizes } from '@/constants/Fonts';
-import { Question } from '@/app/data/mockCourses';
+import { Question } from '@/types/course';
 
 interface DialogLessonProps {
   introduction: string;

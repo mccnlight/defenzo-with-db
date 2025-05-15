@@ -1,78 +1,6 @@
 import { Lock, ShieldCheck, Globe, Smartphone } from 'lucide-react-native';
 import Colors from '@/constants/Colors';
-
-export type Course = {
-  id: string;
-  title: string;
-  description: string;
-  category: string;
-  duration: string;
-  progress: number;
-  lessons: Lesson[];
-  image?: string;
-  level: 'Beginner' | 'Intermediate' | 'Advanced';
-  tags: string[];
-  achievements?: Achievement[];
-  rating: number;
-  learners: number;
-}
-
-export interface Achievement {
-  id: string;
-  title: string;
-  description: string;
-  icon: string;
-  progress: number;
-}
-
-export interface Lesson {
-  id: string;
-  title: string;
-  type: 'dialog' | 'cards' | 'scenario' | 'visual' | 'quiz';
-  duration: string;
-  content: LessonContent;
-  completed?: boolean;
-}
-
-export interface LessonContent {
-  introduction?: string;
-  questions?: Question[];
-  scenarios?: Scenario[];
-  visualTasks?: VisualTask[];
-  quiz?: Question[];
-}
-
-export interface Question {
-  id: string;
-  text: string;
-  type: 'multiple_choice' | 'true_false';
-  options?: string[];
-  correctAnswer: string | boolean;
-  explanation: string;
-}
-
-export interface Scenario {
-  id: string;
-  situation: string;
-  options: string[];
-  correctOption: number;
-  explanation: string;
-}
-
-export interface VisualTask {
-  id: string;
-  image: string;
-  hotspots: Hotspot[];
-}
-
-export interface Hotspot {
-  id: string;
-  x: number;
-  y: number;
-  size: number;
-  title: string;
-  description: string;
-}
+import { Course, Lesson, LessonContent, Achievement, Question, Scenario, VisualTask, Hotspot } from '@/types/course';
 
 export const mockCourses: Course[] = [
   {
@@ -80,13 +8,14 @@ export const mockCourses: Course[] = [
     title: 'Essential Cybersecurity Practices',
     description: 'Learn the fundamentals of cybersecurity through interactive exercises and real-world scenarios.',
     category: 'basics',
-    duration: '30',
+    duration: '2h 30m',
     progress: 0,
     level: 'Beginner',
     tags: ['Security Basics', 'Office Safety', 'Best Practices'],
     image: 'https://example.com/course1.jpg',
     rating: 4.8,
     learners: 12500,
+    recommended: true,
     achievements: [
       {
         id: 'ach1',
@@ -108,7 +37,7 @@ export const mockCourses: Course[] = [
         id: 'lesson-1',
         title: 'Introduction to Office Security',
         type: 'dialog',
-        duration: '5',
+        duration: '30m',
         content: {
           introduction: 'Welcome to your first day at the office! Let\'s learn how to stay secure.',
           questions: [
@@ -126,13 +55,14 @@ export const mockCourses: Course[] = [
               explanation: 'Following security guidelines is crucial for maintaining a secure workplace.'
             }
           ]
-        }
+        },
+        completed: false
       },
       {
         id: 'lesson-2',
         title: 'Security Facts Check',
         type: 'cards',
-        duration: '5',
+        duration: '15m',
         content: {
           questions: [
             {
@@ -164,7 +94,7 @@ export const mockCourses: Course[] = [
         id: 'lesson-3',
         title: 'Office Security Scenarios',
         type: 'scenario',
-        duration: '10',
+        duration: '25m',
         content: {
           scenarios: [
             {
@@ -199,11 +129,13 @@ export const mockCourses: Course[] = [
         id: 'lesson-4',
         title: 'Security Vulnerabilities',
         type: 'visual',
-        duration: '5',
+        duration: '20m',
         content: {
           visualTasks: [
             {
               id: 'vt1',
+              title: 'Find Security Vulnerabilities',
+              description: 'Identify potential security risks in this office scene',
               image: 'office-scene.jpg',
               hotspots: [
                 {
@@ -212,7 +144,7 @@ export const mockCourses: Course[] = [
                   y: 40,
                   size: 20,
                   title: 'Exposed Password',
-                  description: 'Passwords should never be visible on sticky notes or screens.'
+                  description: 'Passwords written on sticky notes are a security risk.'
                 },
                 {
                   id: 'hs2',
@@ -220,33 +152,41 @@ export const mockCourses: Course[] = [
                   y: 70,
                   size: 20,
                   title: 'Unlocked Computer',
-                  description: 'Always lock your computer when stepping away.'
+                  description: 'Unattended computers should always be locked.'
+                },
+                {
+                  id: 'hs3',
+                  x: 45,
+                  y: 55,
+                  size: 20,
+                  title: 'Sensitive Documents',
+                  description: 'Confidential documents left in plain sight.'
                 }
               ]
-            }
-          ]
-        },
-        completed: false
-      },
-      {
-        id: 'lesson-5',
-        title: 'Final Assessment',
-        type: 'quiz',
-        duration: '5',
-        content: {
-          quiz: [
+            },
             {
-              id: 'q1',
-              text: 'Which practice improves office security?',
-              type: 'multiple_choice',
-              options: [
-                'Sharing passwords',
-                'Regular security updates',
-                'Using simple passwords',
-                'Disabling firewalls'
-              ],
-              correctAnswer: 'Regular security updates',
-              explanation: 'Regular updates help protect against new security threats.'
+              id: 'vt2',
+              title: 'Server Room Security',
+              description: 'Identify security issues in the server room',
+              image: 'server-room.jpg',
+              hotspots: [
+                {
+                  id: 'hs4',
+                  x: 25,
+                  y: 35,
+                  size: 20,
+                  title: 'Unsecured Access',
+                  description: 'Server room door should be locked at all times.'
+                },
+                {
+                  id: 'hs5',
+                  x: 55,
+                  y: 65,
+                  size: 20,
+                  title: 'Temperature Warning',
+                  description: 'Server room temperature is above safe levels.'
+                }
+              ]
             }
           ]
         },
@@ -259,19 +199,20 @@ export const mockCourses: Course[] = [
     title: 'Password Security Masterclass',
     description: 'Master the art of creating and managing secure passwords. Learn about password managers and two-factor authentication.',
     category: 'passwords',
-    duration: '45',
+    duration: '1h 45m',
     progress: 0,
-    level: 'Beginner',
+    level: 'Intermediate',
     tags: ['Passwords', '2FA', 'Security'],
     image: 'https://example.com/course2.jpg',
     rating: 4.9,
     learners: 15800,
+    recommended: true,
     lessons: [
       {
         id: 'lesson-1',
         title: 'Password Fundamentals',
         type: 'dialog',
-        duration: '10',
+        duration: '25m',
         content: {
           introduction: 'Learn what makes a password truly secure.',
           questions: [
@@ -289,22 +230,24 @@ export const mockCourses: Course[] = [
               explanation: 'Strong passwords use a mix of letters, numbers, and special characters.'
             }
           ]
-        }
+        },
+        completed: false
       }
     ]
   },
   {
     id: 'course-3',
     title: 'Phishing Attack Prevention',
-    description: 'Learn to identify and avoid phishing attacks. Protect yourself from email and social engineering threats.',
-    category: 'basics',
-    duration: '60',
+    description: 'Learn to identify and prevent phishing attacks. Understand common tactics used by attackers and how to protect yourself.',
+    category: 'security',
+    duration: '90m',
     progress: 0,
-    level: 'Intermediate',
-    tags: ['Phishing', 'Email Security', 'Social Engineering'],
+    level: 'Beginner',
+    tags: ['Phishing', 'Email Security', 'Awareness'],
     image: 'https://example.com/course3.jpg',
     rating: 4.7,
-    learners: 9300,
+    learners: 18200,
+    recommended: true,
     lessons: []
   },
   {
@@ -312,27 +255,27 @@ export const mockCourses: Course[] = [
     title: 'Mobile Device Security',
     description: 'Secure your smartphones and tablets. Learn about app permissions, device encryption, and safe browsing.',
     category: 'mobile',
-    duration: '90',
+    duration: '2h 15m',
     progress: 0,
-    level: 'Beginner',
+    level: 'Intermediate',
     tags: ['Mobile', 'Apps', 'Device Security'],
     image: 'https://example.com/course4.jpg',
     rating: 4.6,
-    learners: 7200,
+    learners: 11500,
     lessons: []
   },
   {
     id: 'course-5',
     title: 'Social Engineering Defense',
     description: 'Learn to recognize and defend against social engineering attacks. Understand manipulation techniques and prevention strategies.',
-    category: 'basics',
-    duration: '75',
+    category: 'security',
+    duration: '1h 15m',
     progress: 0,
     level: 'Intermediate',
     tags: ['Social Engineering', 'Security Awareness', 'Prevention'],
     image: 'https://example.com/course5.jpg',
     rating: 4.8,
-    learners: 8500,
+    learners: 13400,
     lessons: []
   },
   {
@@ -340,41 +283,41 @@ export const mockCourses: Course[] = [
     title: 'Secure Web Browsing Habits',
     description: 'Develop safe browsing habits. Learn about HTTPS, safe downloads, and browser security settings.',
     category: 'web',
-    duration: '45',
+    duration: '45m',
     progress: 0,
     level: 'Beginner',
     tags: ['Web Security', 'Browser Safety', 'HTTPS'],
     image: 'https://example.com/course6.jpg',
     rating: 4.7,
-    learners: 11200,
+    learners: 16200,
     lessons: []
   },
   {
     id: 'course-7',
     title: 'Data Privacy Fundamentals',
     description: 'Understand the basics of data privacy. Learn how to protect your personal information online and offline.',
-    category: 'basics',
-    duration: '60',
+    category: 'privacy',
+    duration: '60m',
     progress: 0,
     level: 'Beginner',
     tags: ['Privacy', 'Data Protection', 'Security'],
     image: 'https://example.com/course7.jpg',
     rating: 4.9,
-    learners: 13400,
+    learners: 14800,
     lessons: []
   },
   {
     id: 'course-8',
     title: 'Malware Protection Strategies',
     description: 'Learn effective strategies to protect against malware, viruses, and ransomware. Understand prevention and recovery methods.',
-    category: 'basics',
-    duration: '90',
+    category: 'security',
+    duration: '1h 30m',
     progress: 0,
     level: 'Intermediate',
     tags: ['Malware', 'Antivirus', 'Security'],
     image: 'https://example.com/course8.jpg',
     rating: 4.8,
-    learners: 10600,
+    learners: 12600,
     lessons: []
   }
 ];

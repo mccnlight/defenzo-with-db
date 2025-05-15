@@ -11,7 +11,7 @@ import { AlertTriangle, MessageCircle, ChevronRight } from 'lucide-react-native'
 import Colors from '@/constants/Colors';
 import Layout from '@/constants/Layout';
 import { fonts, fontSizes } from '@/constants/Fonts';
-import { Scenario } from '@/app/data/mockCourses';
+import { Scenario } from '@/types/course';
 
 interface ScenarioLessonProps {
   scenarios: Scenario[];

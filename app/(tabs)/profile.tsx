@@ -7,7 +7,8 @@ import {
   ScrollView,
   Image,
   Alert,
-  ActivityIndicator
+  ActivityIndicator,
+  Switch
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { 
@@ -16,7 +17,13 @@ import {
   Award, 
   Star,
   LogOut,
-  ChevronRight
+  ChevronRight,
+  User,
+  Mail,
+  Bell,
+  Lock,
+  Globe,
+  Moon
 } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Colors from '@/constants/Colors';
@@ -24,13 +31,75 @@ import Layout from '@/constants/Layout';
 import { fonts, fontSizes } from '@/constants/Fonts';
 import { Link, useRouter } from 'expo-router';
 import SecurityStats from '@/components/profile/SecurityStats';
-import { getProfile, uploadProfilePicture, logout, User, BASE_URL } from '@/app/services/api';
+import { getProfile, uploadProfilePicture, logout, User as ApiUser, BASE_URL } from '@/app/services/api';
+
+interface SettingsSectionProps {
+  title: string;
+  children: React.ReactNode;
+}
+
+const SettingsSection = ({ title, children }: SettingsSectionProps) => (
+  <View style={styles.section}>
+    <Text style={styles.sectionTitle}>{title}</Text>
+    <View style={styles.sectionContent}>
+      {children}
+    </View>
+  </View>
+);
+
+interface SettingsItemProps {
+  icon: React.ReactNode;
+  title: string;
+  value?: string;
+  onPress?: () => void;
+  isSwitch?: boolean;
+  switchValue?: boolean;
+  onSwitchChange?: (value: boolean) => void;
+}
+
+const SettingsItem = ({ 
+  icon, 
+  title, 
+  value, 
+  onPress, 
+  isSwitch, 
+  switchValue,
+  onSwitchChange 
+}: SettingsItemProps) => (
+  <TouchableOpacity 
+    style={styles.settingsItem}
+    onPress={onPress}
+    disabled={isSwitch}
+  >
+    <View style={styles.settingsItemLeft}>
+      {icon}
+      <Text style={styles.settingsItemTitle}>{title}</Text>
+    </View>
+    <View style={styles.settingsItemRight}>
+      {isSwitch ? (
+        <Switch
+          value={switchValue}
+          onValueChange={onSwitchChange}
+          trackColor={{ false: Colors.dark.border, true: Colors.dark.primary }}
+          thumbColor={Colors.dark.text}
+        />
+      ) : (
+        <>
+          {value && <Text style={styles.settingsItemValue}>{value}</Text>}
+          <ChevronRight size={20} color={Colors.dark.text} style={{ opacity: 0.6 }} />
+        </>
+      )}
+    </View>
+  </TouchableOpacity>
+);
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<ApiUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [darkMode, setDarkMode] = useState(true);
+  const [notifications, setNotifications] = useState(true);
 
   const statItems = [
     { 
@@ -69,7 +138,7 @@ export default function ProfileScreen() {
     try {
       setUploading(true);
       const profilePictureUrl = await uploadProfilePicture();
-      setUser((prev: User | null) => prev ? { ...prev, profile_picture_url: profilePictureUrl } : null);
+      setUser((prev: ApiUser | null) => prev ? { ...prev, profile_picture_url: profilePictureUrl } : null);
       Alert.alert('Success', 'Profile picture updated');
     } catch (error: any) {
       Alert.alert('Error', error.message || 'Failed to upload profile picture');
@@ -101,7 +170,10 @@ export default function ProfileScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Profile</Text>
-        <TouchableOpacity style={styles.settingsButton}>
+        <TouchableOpacity 
+          style={styles.settingsButton}
+          onPress={() => router.push('/(screens)/settings')}
+        >
           <Settings color={Colors.dark.text} size={24} />
         </TouchableOpacity>
       </View>
@@ -175,19 +247,6 @@ export default function ProfileScreen() {
           })}
         </View>
         
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Learning Progress</Text>
-          <View style={styles.progressContainer}>
-            <View style={styles.progressBar}>
-              <View style={[styles.progressFill, { width: '70%' }]} />
-            </View>
-            <Text style={styles.progressText}>70% Complete</Text>
-          </View>
-          <Text style={styles.progressDescription}>
-            Complete more courses to reach Expert level
-          </Text>
-        </View>
-        
         <Link href="/(screens)/badges" asChild>
           <TouchableOpacity style={styles.menuItem}>
             <Award color={Colors.dark.warning} size={22} />
@@ -195,7 +254,7 @@ export default function ProfileScreen() {
             <ChevronRight color={Colors.dark.text} size={20} />
           </TouchableOpacity>
         </Link>
-        
+
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
           <LogOut color={Colors.dark.error} size={20} />
           <Text style={styles.logoutText}>Log Out</Text>
@@ -367,6 +426,40 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.md,
     color: Colors.dark.text,
     marginBottom: Layout.spacing.md,
+  },
+  sectionContent: {
+    backgroundColor: Colors.dark.card,
+    borderRadius: Layout.borderRadius.large,
+    marginHorizontal: Layout.spacing.md,
+  },
+  settingsItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: Layout.spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.dark.border,
+  },
+  settingsItemLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Layout.spacing.md,
+  },
+  settingsItemTitle: {
+    fontFamily: fonts.body,
+    fontSize: fontSizes.md,
+    color: Colors.dark.text,
+  },
+  settingsItemRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Layout.spacing.sm,
+  },
+  settingsItemValue: {
+    fontFamily: fonts.body,
+    fontSize: fontSizes.md,
+    color: Colors.dark.text,
+    opacity: 0.6,
   },
   progressContainer: {
     marginBottom: Layout.spacing.sm,

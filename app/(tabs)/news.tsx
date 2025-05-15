@@ -5,75 +5,129 @@ import {
   StyleSheet, 
   FlatList, 
   TouchableOpacity, 
-  Image
+  ScrollView
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { 
-  Bell, 
-  Settings, 
-  Bookmark,
-  ThumbsUp,
-  MessageCircle,
-  Share2
+  TrendingUp,
+  Shield,
+  AlertTriangle,
+  BookOpen,
+  Target,
+  Settings
 } from 'lucide-react-native';
 import Colors from '@/constants/Colors';
 import Layout from '@/constants/Layout';
 import { fonts, fontSizes } from '@/constants/Fonts';
 import { mockNewsArticles } from '@/data/mockNews';
 import NewsCard from '@/components/news/NewsCard';
-import TrendingTopics from '@/components/news/TrendingTopics';
+
+const categories = [
+  { 
+    id: 'all', 
+    label: 'All News', 
+    icon: TrendingUp, 
+    color: Colors.dark.primary,
+    description: 'All cybersecurity news and updates'
+  },
+  { 
+    id: 'threats', 
+    label: 'Active Threats', 
+    icon: AlertTriangle, 
+    color: '#FF6B6B', // Soft red
+    description: 'Current threats, attacks, and vulnerabilities'
+  },
+  { 
+    id: 'tips', 
+    label: 'Security Tips', 
+    icon: Shield, 
+    color: '#4ECB71', // Soft green
+    description: 'Best practices and security recommendations'
+  },
+  { 
+    id: 'education', 
+    label: 'Education', 
+    icon: BookOpen, 
+    color: '#4DABF7', // Soft blue
+    description: 'Learning materials and tutorials'
+  },
+  { 
+    id: 'industry', 
+    label: 'Industry News', 
+    icon: Target, 
+    color: '#9775FA', // Soft purple
+    description: 'Market trends and company updates'
+  },
+  { 
+    id: 'updates', 
+    label: 'Tech Updates', 
+    icon: Settings, 
+    color: '#FFB057', // Soft orange
+    description: 'Software updates and patch releases'
+  }
+];
 
 export default function NewsScreen() {
-  const [activeTab, setActiveTab] = useState('all');
+  const [activeCategory, setActiveCategory] = useState('all');
   
-  const tabs = [
-    { id: 'all', label: 'All News' },
-    { id: 'trends', label: 'Trends' },
-    { id: 'tips', label: 'Security Tips' },
-    { id: 'threats', label: 'Threats' },
-  ];
+  const categoryMap: Record<string, string> = {
+    'threats': 'active threats',
+    'tips': 'security tips',
+    'education': 'education',
+    'industry': 'industry news',
+    'updates': 'tech updates'
+  };
   
-  const filteredNews = activeTab === 'all' 
-    ? mockNewsArticles 
-    : mockNewsArticles.filter(article => article.category === activeTab);
+  const filteredNews = mockNewsArticles.filter(article => {
+    if (activeCategory === 'all') return true;
+    return article.category.toLowerCase() === categoryMap[activeCategory];
+  });
   
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Cybersecurity News</Text>
-        <View style={styles.headerButtons}>
-          <TouchableOpacity style={styles.iconButton}>
-            <Bell color={Colors.dark.text} size={22} />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.iconButton}>
-            <Settings color={Colors.dark.text} size={22} />
-          </TouchableOpacity>
-        </View>
       </View>
       
-      <View style={styles.tabContainer}>
+      <View style={styles.categoriesContainer}>
         <FlatList
           horizontal
-          data={tabs}
+          data={categories}
           keyExtractor={(item) => item.id}
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.tabsContent}
-          renderItem={({ item }) => (
-            <TouchableOpacity 
-              style={[
-                styles.tabButton,
-                activeTab === item.id && styles.activeTabButton
-              ]}
-              onPress={() => setActiveTab(item.id)}
-            >
-              <Text style={[
-                styles.tabLabel,
-                activeTab === item.id && styles.activeTabLabel
-              ]}>
-                {item.label}
-              </Text>
-            </TouchableOpacity>
-          )}
+          contentContainerStyle={styles.categoriesContent}
+          renderItem={({ item }) => {
+            const Icon = item.icon;
+            const isActive = activeCategory === item.id;
+            return (
+              <TouchableOpacity 
+                style={[
+                  styles.categoryButton,
+                  isActive && [
+                    styles.activeCategoryButton,
+                    { borderColor: item.color }
+                  ]
+                ]}
+                onPress={() => setActiveCategory(item.id)}
+              >
+                <View style={[
+                  styles.iconContainer,
+                  { backgroundColor: isActive ? item.color + '20' : 'transparent' }
+                ]}>
+                  <Icon 
+                    size={20} 
+                    color={isActive ? item.color : Colors.dark.text} 
+                  />
+                </View>
+                <Text style={[
+                  styles.categoryLabel,
+                  isActive && { color: item.color }
+                ]}>
+                  {item.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          }}
         />
       </View>
       
@@ -85,14 +139,6 @@ export default function NewsScreen() {
         )}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.newsList}
-        ListHeaderComponent={
-          activeTab === 'all' && (
-            <>
-              <TrendingTopics />
-              <Text style={styles.sectionTitle}>Latest News</Text>
-            </>
-          )
-        }
       />
     </SafeAreaView>
   );
@@ -104,9 +150,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.dark.background,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
     paddingHorizontal: Layout.spacing.md,
     paddingVertical: Layout.spacing.lg,
   },
@@ -115,50 +158,41 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.xxl,
     color: Colors.dark.text,
   },
-  headerButtons: {
-    flexDirection: 'row',
-  },
-  iconButton: {
-    width: 42,
-    height: 42,
-    borderRadius: Layout.borderRadius.round,
-    backgroundColor: Colors.dark.card,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginLeft: Layout.spacing.sm,
-  },
-  tabContainer: {
+  categoriesContainer: {
     marginBottom: Layout.spacing.md,
   },
-  tabsContent: {
+  categoriesContent: {
     paddingHorizontal: Layout.spacing.md,
   },
-  tabButton: {
+  categoryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingVertical: Layout.spacing.sm,
     paddingHorizontal: Layout.spacing.md,
     borderRadius: Layout.borderRadius.medium,
     marginRight: Layout.spacing.sm,
     backgroundColor: Colors.dark.card,
+    borderWidth: 1,
+    borderColor: 'transparent',
   },
-  activeTabButton: {
-    backgroundColor: Colors.dark.primary,
+  activeCategoryButton: {
+    backgroundColor: Colors.dark.card + '80',
   },
-  tabLabel: {
+  iconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: Layout.borderRadius.round,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: Layout.spacing.xs,
+  },
+  categoryLabel: {
     fontFamily: fonts.bodyMedium,
     fontSize: fontSizes.sm,
     color: Colors.dark.text,
   },
-  activeTabLabel: {
-    color: '#FFFFFF',
-  },
   newsList: {
     paddingHorizontal: Layout.spacing.md,
-    paddingBottom: 120, // Extra padding for bottom tab bar
-  },
-  sectionTitle: {
-    fontFamily: fonts.heading,
-    fontSize: fontSizes.lg,
-    color: Colors.dark.text,
-    marginVertical: Layout.spacing.md,
+    paddingBottom: 120,
   },
 });

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   View, 
   Text, 
@@ -22,19 +22,30 @@ import {
 import Colors from '@/constants/Colors';
 import Layout from '@/constants/Layout';
 import { fonts, fontSizes } from '@/constants/Fonts';
-import { mockCourses, Course, Lesson } from '@/app/data/mockCourses';
+import { mockCourses } from '@/app/data/mockCourses';
+import { Course, Lesson } from '@/types/course';
 import DialogLesson from '@/components/lessons/DialogLesson';
 import CardsLesson from '@/components/lessons/CardsLesson';
 import ScenarioLesson from '@/components/lessons/ScenarioLesson';
 import VisualLesson from '@/components/lessons/VisualLesson';
+import { useCourseStore } from '@/app/store/courseStore';
 
 export default function CourseScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
   const { width } = useWindowDimensions();
   const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
+  
+  const { courses, setCourses, updateLessonStatus } = useCourseStore();
+  
+  // Initialize courses on first load
+  useEffect(() => {
+    if (courses.length === 0) {
+      setCourses(mockCourses);
+    }
+  }, [courses.length, setCourses]);
 
-  const course = mockCourses.find(c => c.id === id) as Course;
+  const course = courses.find((c: Course) => c.id === id);
 
   if (!course) {
     return (
@@ -58,23 +69,7 @@ export default function CourseScreen() {
 
   const handleLessonComplete = () => {
     if (!selectedLesson) return;
-    
-    // Find the course and lesson
-    const courseIndex = mockCourses.findIndex(c => c.id === id);
-    if (courseIndex === -1) return;
-    
-    const lessonIndex = mockCourses[courseIndex].lessons.findIndex(l => l.id === selectedLesson.id);
-    if (lessonIndex === -1) return;
-    
-    // Update the lesson's completed status
-    mockCourses[courseIndex].lessons[lessonIndex].completed = true;
-    
-    // Calculate new progress
-    const totalLessons = mockCourses[courseIndex].lessons.length;
-    const completedLessons = mockCourses[courseIndex].lessons.filter(l => l.completed).length;
-    mockCourses[courseIndex].progress = Math.round((completedLessons / totalLessons) * 100);
-    
-    // Close the lesson
+    updateLessonStatus(course.id, selectedLesson.id, true);
     setSelectedLesson(null);
   };
 
@@ -105,15 +100,50 @@ export default function CourseScreen() {
           />
         );
       case 'visual':
+        if (!selectedLesson.content.visualTasks?.[0]) return null;
         return (
           <VisualLesson
-            visualTasks={selectedLesson.content.visualTasks || []}
+            title={selectedLesson.title}
+            description={selectedLesson.content.visualTasks[0].description}
+            visualTasks={selectedLesson.content.visualTasks}
             onComplete={handleLessonComplete}
           />
         );
       default:
         return null;
     }
+  };
+
+  const renderTags = (tags: string[]) => {
+    return tags.map((tag: string, index: number) => (
+      <View key={index} style={styles.tag}>
+        <Text style={styles.tagText}>{tag}</Text>
+      </View>
+    ));
+  };
+
+  const renderLessons = (lessons: Lesson[]) => {
+    return lessons.map((lesson: Lesson, index: number) => (
+      <TouchableOpacity
+        key={lesson.id}
+        style={styles.lessonItem}
+        onPress={() => handleLessonPress(lesson)}
+      >
+        <View style={styles.lessonInfo}>
+          <Text style={styles.lessonNumber}>Урок {index + 1}</Text>
+          <Text style={styles.lessonTitle}>{lesson.title}</Text>
+          <View style={styles.lessonMeta}>
+            <Clock size={14} color={Colors.dark.text} />
+            <Text style={styles.lessonDuration}>{lesson.duration}</Text>
+          </View>
+        </View>
+        {lesson.completed ? (
+          <CheckCircle size={20} color={Colors.dark.success} />
+        ) : (
+          <ChevronRight size={20} color={Colors.dark.text} />
+        )}
+      </TouchableOpacity>
+    ));
   };
 
   return (
@@ -174,37 +204,13 @@ export default function CourseScreen() {
             </View>
 
             <View style={styles.tags}>
-              {course.tags.map((tag, index) => (
-                <View key={index} style={styles.tag}>
-                  <Text style={styles.tagText}>{tag}</Text>
-                </View>
-              ))}
+              {renderTags(course.tags)}
             </View>
           </View>
 
           <View style={styles.lessonsSection}>
             <Text style={styles.sectionTitle}>Содержание курса</Text>
-            {course.lessons.map((lesson, index) => (
-              <TouchableOpacity
-                key={lesson.id}
-                style={styles.lessonItem}
-                onPress={() => handleLessonPress(lesson)}
-              >
-                <View style={styles.lessonInfo}>
-                  <Text style={styles.lessonNumber}>Урок {index + 1}</Text>
-                  <Text style={styles.lessonTitle}>{lesson.title}</Text>
-                  <View style={styles.lessonMeta}>
-                    <Clock size={14} color={Colors.dark.text} />
-                    <Text style={styles.lessonDuration}>{lesson.duration}</Text>
-                  </View>
-                </View>
-                {lesson.completed ? (
-                  <CheckCircle size={20} color={Colors.dark.success} />
-                ) : (
-                  <ChevronRight size={20} color={Colors.dark.text} />
-                )}
-              </TouchableOpacity>
-            ))}
+            {renderLessons(course.lessons)}
           </View>
         </ScrollView>
       )}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { 
   View, 
   Text, 
@@ -7,151 +7,186 @@ import {
   Image,
   ScrollView,
   useWindowDimensions,
-  Modal
+  Modal,
+  Dimensions,
+  LayoutChangeEvent
 } from 'react-native';
 import { AlertCircle, ChevronRight } from 'lucide-react-native';
 import Colors from '@/constants/Colors';
 import Layout from '@/constants/Layout';
 import { fonts, fontSizes } from '@/constants/Fonts';
-import { VisualTask, Hotspot } from '@/app/data/mockCourses';
+import { VisualTask, Hotspot } from '@/types/course';
 
-interface VisualLessonProps {
+const SCREEN_WIDTH = Dimensions.get('window').width;
+const POINT_SIZE = 10;
+const FOUND_POINT_SIZE = 20;
+const DETECTION_RADIUS = 20;
+
+interface VisualTaskProps {
+  title: string;
+  description: string;
   visualTasks: VisualTask[];
   onComplete: () => void;
 }
 
-export default function VisualLesson({ visualTasks, onComplete }: VisualLessonProps) {
+export default function VisualLesson({ 
+  title, 
+  description,
+  visualTasks,
+  onComplete 
+}: VisualTaskProps) {
   const [currentTaskIndex, setCurrentTaskIndex] = useState(0);
-  const [foundHotspots, setFoundHotspots] = useState<string[]>([]);
-  const [selectedHotspot, setSelectedHotspot] = useState<Hotspot | null>(null);
-  const { width } = useWindowDimensions();
-
+  const [foundHotspots, setFoundHotspots] = useState<Hotspot[]>([]);
+  const [areaLayout, setAreaLayout] = useState({ width: 0, height: 0 });
+  const [showTaskComplete, setShowTaskComplete] = useState(false);
+  
   const currentTask = visualTasks[currentTaskIndex];
   const isLastTask = currentTaskIndex === visualTasks.length - 1;
-  const allHotspotsFound = currentTask.hotspots.every(
-    hotspot => foundHotspots.includes(hotspot.id)
-  );
 
-  const handleHotspotPress = (hotspot: Hotspot) => {
-    if (!foundHotspots.includes(hotspot.id)) {
-      setFoundHotspots(prev => [...prev, hotspot.id]);
+  const handleLayout = useCallback((event: LayoutChangeEvent) => {
+    const { width, height } = event.nativeEvent.layout;
+    setAreaLayout({ width, height });
+  }, []);
+
+  const handlePress = useCallback((x: number, y: number) => {
+    const isNearHotspot = currentTask.hotspots.some(hotspot => {
+      const scaledX = (hotspot.x * areaLayout.width) / 100;
+      const scaledY = (hotspot.y * areaLayout.height) / 100;
+      return Math.abs(scaledX - x) < DETECTION_RADIUS && 
+             Math.abs(scaledY - y) < DETECTION_RADIUS;
+    });
+    
+    if (isNearHotspot) {
+      const newHotspot = currentTask.hotspots.find(hotspot => {
+        const scaledX = (hotspot.x * areaLayout.width) / 100;
+        const scaledY = (hotspot.y * areaLayout.height) / 100;
+        return Math.abs(scaledX - x) < DETECTION_RADIUS && 
+               Math.abs(scaledY - y) < DETECTION_RADIUS;
+      });
+      
+      if (newHotspot && !isHotspotFound(newHotspot)) {
+        const updatedHotspots = [...foundHotspots, newHotspot];
+        setFoundHotspots(updatedHotspots);
+        
+        if (updatedHotspots.length === currentTask.hotspots.length) {
+          setShowTaskComplete(true);
+        }
+      }
     }
-    setSelectedHotspot(hotspot);
-  };
-
-  const handleNext = () => {
+  }, [foundHotspots, currentTask, areaLayout]);
+  
+  const handleNextTask = useCallback(() => {
     if (isLastTask) {
       onComplete();
-      return;
+    } else {
+      setCurrentTaskIndex(prev => prev + 1);
+      setFoundHotspots([]);
+      setShowTaskComplete(false);
     }
+  }, [isLastTask, onComplete]);
 
-    setCurrentTaskIndex(prev => prev + 1);
-    setFoundHotspots([]);
-    setSelectedHotspot(null);
-  };
+  const isHotspotFound = useCallback((hotspot: Hotspot) => {
+    return foundHotspots.some(h => h.id === hotspot.id);
+  }, [foundHotspots]);
+
+  const scaledHotspots = useMemo(() => 
+    currentTask.hotspots.map(hotspot => ({
+      ...hotspot,
+      scaledX: (hotspot.x * areaLayout.width) / 100,
+      scaledY: (hotspot.y * areaLayout.height) / 100
+    })),
+    [currentTask.hotspots, areaLayout]
+  );
 
   return (
-    <ScrollView 
-      style={styles.container}
-      contentContainerStyle={styles.content}
-    >
-      <View style={styles.taskContainer}>
-        <View style={styles.header}>
-          <AlertCircle color={Colors.dark.warning} size={24} />
-          <Text style={styles.headerText}>
-            Найдите все уязвимости
-          </Text>
-        </View>
-
-        <View style={styles.imageContainer}>
-          <Image
-            source={{ uri: currentTask.image }}
-            style={[styles.image, { width: width - 64 }]}
-            resizeMode="contain"
-          />
-          {currentTask.hotspots.map((hotspot) => {
-            const isFound = foundHotspots.includes(hotspot.id);
-            return (
-              <TouchableOpacity
-                key={hotspot.id}
-                style={[
-                  styles.hotspot,
-                  {
-                    left: `${hotspot.x}%`,
-                    top: `${hotspot.y}%`,
-                    width: hotspot.size,
-                    height: hotspot.size,
-                    backgroundColor: isFound 
-                      ? Colors.dark.success + '40'
-                      : Colors.dark.warning + '40'
-                  }
-                ]}
-                onPress={() => handleHotspotPress(hotspot)}
-              >
-                <View style={[
-                  styles.hotspotInner,
-                  isFound && styles.hotspotFound
-                ]} />
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-
-        <View style={styles.progressInfo}>
-          <Text style={styles.progressText}>
-            Найдено {foundHotspots.length} из {currentTask.hotspots.length} уязвимостей
-          </Text>
-        </View>
-
-        {allHotspotsFound && (
-          <TouchableOpacity 
-            style={styles.nextButton} 
-            onPress={handleNext}
-          >
-            <Text style={styles.nextButtonText}>
-              {isLastTask ? 'Завершить' : 'Следующее изображение'}
-            </Text>
-            <ChevronRight color={Colors.dark.text} size={20} />
-          </TouchableOpacity>
-        )}
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.title}>{currentTask.title}</Text>
+        <Text style={styles.description}>{currentTask.description}</Text>
       </View>
 
-      <Modal
-        visible={!!selectedHotspot}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setSelectedHotspot(null)}
+      <View 
+        style={styles.taskArea}
+        onLayout={handleLayout}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>{selectedHotspot?.title}</Text>
-            <Text style={styles.modalDescription}>
-              {selectedHotspot?.description}
-            </Text>
-            <TouchableOpacity 
-              style={styles.modalButton}
-              onPress={() => setSelectedHotspot(null)}
+        <Image
+          source={{ uri: currentTask.image }}
+          style={styles.image}
+          resizeMode="contain"
+        />
+        <TouchableOpacity 
+          style={styles.interactiveArea}
+          onPress={(event) => {
+            const { locationX, locationY } = event.nativeEvent;
+            handlePress(locationX, locationY);
+          }}
+        >
+          {scaledHotspots.map((hotspot) => (
+            <View
+              key={hotspot.id}
+              style={[
+                styles.targetPoint,
+                {
+                  left: hotspot.scaledX - POINT_SIZE / 2,
+                  top: hotspot.scaledY - POINT_SIZE / 2,
+                  backgroundColor: isHotspotFound(hotspot) 
+                    ? Colors.dark.success 
+                    : Colors.dark.warning
+                }
+              ]}
+            />
+          ))}
+          
+          {foundHotspots.map((hotspot) => (
+            <View
+              key={`found-${hotspot.id}`}
+              style={[
+                styles.foundPoint,
+                {
+                  left: (hotspot.x * areaLayout.width) / 100 - FOUND_POINT_SIZE / 2,
+                  top: (hotspot.y * areaLayout.height) / 100 - FOUND_POINT_SIZE / 2,
+                }
+              ]}
             >
-              <Text style={styles.modalButtonText}>Понятно</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+              <Text style={styles.hotspotTitle}>{hotspot.title}</Text>
+              <Text style={styles.hotspotDescription}>{hotspot.description}</Text>
+            </View>
+          ))}
+        </TouchableOpacity>
+      </View>
 
-      <View style={styles.progressContainer}>
+      <View style={styles.footer}>
+        <Text style={styles.progressText}>
+          Found {foundHotspots.length} of {currentTask.hotspots.length} vulnerabilities
+        </Text>
         <View style={styles.progressBar}>
           <View 
             style={[
               styles.progressFill,
-              { width: `${((currentTaskIndex + 1) / visualTasks.length) * 100}%` }
+              { 
+                width: `${(foundHotspots.length / currentTask.hotspots.length) * 100}%` 
+              }
             ]} 
           />
         </View>
+
         <Text style={styles.taskProgress}>
-          Задание {currentTaskIndex + 1} из {visualTasks.length}
+          Task {currentTaskIndex + 1} of {visualTasks.length}
         </Text>
       </View>
-    </ScrollView>
+
+      {showTaskComplete && (
+        <TouchableOpacity 
+          style={styles.nextButton}
+          onPress={handleNextTask}
+        >
+          <Text style={styles.nextButtonText}>
+            {isLastTask ? 'Complete Lesson' : 'Next Task'}
+          </Text>
+          <ChevronRight color={Colors.dark.text} size={20} />
+        </TouchableOpacity>
+      )}
+    </View>
   );
 }
 
@@ -159,120 +194,95 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.dark.background,
-  },
-  content: {
     padding: Layout.spacing.lg,
-  },
-  taskContainer: {
-    backgroundColor: Colors.dark.card,
-    borderRadius: Layout.borderRadius.large,
-    padding: Layout.spacing.lg,
-    marginBottom: Layout.spacing.xl,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
     marginBottom: Layout.spacing.lg,
   },
-  headerText: {
+  title: {
     fontFamily: fonts.heading,
-    fontSize: fontSizes.lg,
+    fontSize: fontSizes.xl,
     color: Colors.dark.text,
-    marginLeft: Layout.spacing.sm,
+    marginBottom: Layout.spacing.sm,
   },
-  imageContainer: {
-    position: 'relative',
-    marginBottom: Layout.spacing.lg,
-  },
-  image: {
-    height: 300,
-    borderRadius: Layout.borderRadius.large,
-    backgroundColor: Colors.dark.background,
-  },
-  hotspot: {
-    position: 'absolute',
-    borderRadius: Layout.borderRadius.round,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  hotspotInner: {
-    width: '50%',
-    height: '50%',
-    borderRadius: Layout.borderRadius.round,
-    backgroundColor: Colors.dark.warning,
-  },
-  hotspotFound: {
-    backgroundColor: Colors.dark.success,
-  },
-  progressInfo: {
-    alignItems: 'center',
-    marginBottom: Layout.spacing.lg,
-  },
-  progressText: {
-    fontFamily: fonts.bodyMedium,
-    fontSize: fontSizes.md,
-    color: Colors.dark.text,
-  },
-  nextButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Colors.dark.primary,
-    padding: Layout.spacing.md,
-    borderRadius: Layout.borderRadius.large,
-  },
-  nextButtonText: {
-    fontFamily: fonts.bodyBold,
-    fontSize: fontSizes.md,
-    color: Colors.dark.text,
-    marginRight: Layout.spacing.xs,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: Layout.spacing.lg,
-  },
-  modalContent: {
-    backgroundColor: Colors.dark.card,
-    borderRadius: Layout.borderRadius.large,
-    padding: Layout.spacing.lg,
-    width: '100%',
-    maxWidth: 400,
-  },
-  modalTitle: {
-    fontFamily: fonts.heading,
-    fontSize: fontSizes.lg,
-    color: Colors.dark.text,
-    marginBottom: Layout.spacing.md,
-  },
-  modalDescription: {
+  description: {
     fontFamily: fonts.body,
     fontSize: fontSizes.md,
     color: Colors.dark.text,
-    marginBottom: Layout.spacing.lg,
-    lineHeight: 24,
+    opacity: 0.7,
   },
-  modalButton: {
-    backgroundColor: Colors.dark.primary,
-    padding: Layout.spacing.md,
+  taskArea: {
+    flex: 1,
+    backgroundColor: Colors.dark.card,
     borderRadius: Layout.borderRadius.large,
-    alignItems: 'center',
+    overflow: 'hidden',
+    marginBottom: Layout.spacing.lg,
   },
-  modalButtonText: {
-    fontFamily: fonts.bodyBold,
-    fontSize: fontSizes.md,
+  image: {
+    width: '100%',
+    height: '100%',
+    position: 'absolute',
+  },
+  interactiveArea: {
+    width: '100%',
+    height: '100%',
+    position: 'relative',
+  },
+  targetPoint: {
+    position: 'absolute',
+    width: POINT_SIZE,
+    height: POINT_SIZE,
+    borderRadius: POINT_SIZE / 2,
+    zIndex: 1,
+  },
+  foundPoint: {
+    position: 'absolute',
+    width: FOUND_POINT_SIZE,
+    height: FOUND_POINT_SIZE,
+    borderRadius: FOUND_POINT_SIZE / 2,
+    borderWidth: 2,
+    borderColor: Colors.dark.success,
+    backgroundColor: Colors.dark.success + '20',
+    zIndex: 2,
+  },
+  hotspotTitle: {
+    position: 'absolute',
+    top: FOUND_POINT_SIZE + 4,
+    left: FOUND_POINT_SIZE / 2,
+    backgroundColor: Colors.dark.card,
+    padding: Layout.spacing.xs,
+    borderRadius: Layout.borderRadius.small,
+    fontFamily: fonts.bodyMedium,
+    fontSize: fontSizes.sm,
     color: Colors.dark.text,
+    width: 150,
   },
-  progressContainer: {
-    marginTop: 'auto',
+  hotspotDescription: {
+    position: 'absolute',
+    top: FOUND_POINT_SIZE + 28,
+    left: FOUND_POINT_SIZE / 2,
+    backgroundColor: Colors.dark.card,
+    padding: Layout.spacing.xs,
+    borderRadius: Layout.borderRadius.small,
+    fontFamily: fonts.body,
+    fontSize: fontSizes.xs,
+    color: Colors.dark.text,
+    opacity: 0.7,
+    width: 150,
+  },
+  footer: {
+    gap: Layout.spacing.sm,
+  },
+  progressText: {
+    fontFamily: fonts.bodyMedium,
+    fontSize: fontSizes.sm,
+    color: Colors.dark.text,
+    textAlign: 'center',
   },
   progressBar: {
     height: 4,
     backgroundColor: Colors.dark.card,
     borderRadius: Layout.borderRadius.round,
-    marginBottom: Layout.spacing.xs,
     overflow: 'hidden',
   },
   progressFill: {
@@ -285,5 +295,21 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.sm,
     color: Colors.dark.text,
     textAlign: 'center',
+    marginTop: Layout.spacing.sm,
+  },
+  nextButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.dark.primary,
+    padding: Layout.spacing.md,
+    borderRadius: Layout.borderRadius.large,
+    marginTop: Layout.spacing.lg,
+  },
+  nextButtonText: {
+    fontFamily: fonts.bodyBold,
+    fontSize: fontSizes.md,
+    color: Colors.dark.text,
+    marginRight: Layout.spacing.xs,
   },
 }); 

@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Bell, Trophy, Activity, Shield, BookOpen, AlertTriangle, ChevronRight } from 'lucide-react-native';
+import { Bell, Trophy, Activity, Shield, BookOpen, AlertTriangle, ChevronRight, Eye, Target, Settings, TrendingUp } from 'lucide-react-native';
 import Colors from '@/constants/Colors';
 import Layout from '@/constants/Layout';
 import { fonts, fontSizes } from '@/constants/Fonts';
@@ -11,8 +11,10 @@ import SecurityScoreCard from '@/components/home/SecurityScoreCard';
 import AchievementCard from '@/components/home/AchievementCard';
 import { mockCourses } from '@/app/data/mockCourses';
 import { mockNewsArticles } from '@/data/mockNews';
-import { Link, router } from 'expo-router';
+import { Link, router, useRouter } from 'expo-router';
 import { getRecommendedCourses, getContinueLearningCourses } from '@/hooks/useSecurityScore';
+import { useCourseStore } from '@/app/store/courseStore';
+import NewsCard from '@/components/news/NewsCard';
 
 // Временные моковые данные для демонстрации
 const mockUserMetrics = {
@@ -29,11 +31,84 @@ const mockUserMetrics = {
   preferredCategories: ['web', 'passwords']
 };
 
+interface Achievement {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+  progress: number;
+  color: string;
+}
+
+// Общие достижения для всего приложения
+export const globalAchievements: Achievement[] = [
+  {
+    id: 'ach1',
+    title: 'Quick Learner',
+    description: 'Complete 5 courses in Cybersecurity Basics',
+    icon: '🚀',
+    progress: 60,
+    color: Colors.dark.primary
+  },
+  {
+    id: 'ach2',
+    title: 'Quiz Master',
+    description: 'Score 90%+ in 3 security assessment quizzes',
+    icon: '🎯',
+    progress: 30,
+    color: Colors.dark.warning
+  },
+  {
+    id: 'ach3',
+    title: 'Security Expert',
+    description: 'Complete all advanced security modules',
+    icon: '🛡️',
+    progress: 45,
+    color: Colors.dark.secondary
+  },
+  {
+    id: 'ach4',
+    title: 'Network Guardian',
+    description: 'Master network security fundamentals',
+    icon: '🌐',
+    progress: 75,
+    color: Colors.dark.accent
+  },
+  {
+    id: 'ach5',
+    title: 'Privacy Champion',
+    description: 'Complete data privacy and protection courses',
+    icon: '🔐',
+    progress: 20,
+    color: Colors.dark.error
+  }
+];
+
 export default function HomeScreen() {
-  // Получаем отсортированные курсы с помощью новой логики
-  const recommendedCourses = getRecommendedCourses(mockCourses, mockUserMetrics);
-  const continuelearningCourses = getContinueLearningCourses(mockCourses, mockUserMetrics);
-  const featuredCourse = continuelearningCourses[0] || mockCourses[0];
+  const [isLoading, setIsLoading] = useState(true);
+  const { courses, setCourses } = useCourseStore();
+
+  // Initialize courses on first load
+  useEffect(() => {
+    if (courses.length === 0) {
+      setCourses(mockCourses);
+    }
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Оптимизируем получение курсов с помощью useMemo
+  const { recommendedCourses, continuelearningCourses, featuredCourse } = useMemo(() => {
+    const recommended = getRecommendedCourses(courses, mockUserMetrics);
+    const continuing = getContinueLearningCourses(courses, mockUserMetrics);
+    return {
+      recommendedCourses: recommended,
+      continuelearningCourses: continuing,
+      featuredCourse: continuing[0] || courses[0]
+    };
+  }, [courses]);
   
   const latestNews = mockNewsArticles[0];
 
@@ -56,125 +131,214 @@ export default function HomeScreen() {
             <Text style={styles.welcomeText}>Welcome back,</Text>
             <Text style={styles.nameText}>Alex</Text>
           </View>
-          <TouchableOpacity style={styles.notificationButton}>
-            <Bell color={Colors.dark.text} size={24} />
-          </TouchableOpacity>
         </View>
         
-        <SecurityScoreCard />
-        
-        {continuelearningCourses.length > 0 && (
+        {!isLoading && (
           <>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Continue Learning</Text>
-              <TouchableOpacity>
-                <Text style={styles.viewAllText}>View All</Text>
-              </TouchableOpacity>
-            </View>
+            <SecurityScoreCard />
             
-            <TouchableOpacity>
-              <LinearGradient
-                colors={['#2563EB', '#0D9488']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.featuredCourseGradient}
-              >
-                <View style={styles.featuredCourseContent}>
-                  <View style={styles.featuredCourseInfo}>
-                    <Text style={styles.featuredCourseCategory}>CONTINUE</Text>
-                    <Text style={styles.featuredCourseTitle}>{featuredCourse.title}</Text>
-                    <Text style={styles.featuredCourseProgress}>
-                      {featuredCourse.progress}% Complete
-                    </Text>
-                  </View>
-                  <View style={styles.featuredCourseImageContainer}>
-                    <Shield color="white" size={48} />
-                  </View>
+            {continuelearningCourses.length > 0 && (
+              <View style={styles.section}>
+                <View style={styles.sectionHeader}>
+                  <Text style={styles.sectionTitle}>Continue Learning</Text>
                 </View>
-              </LinearGradient>
-            </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={styles.featuredCourse}
+                  onPress={() => router.push({
+                    pathname: '/(screens)/course/[id]',
+                    params: { id: featuredCourse.id }
+                  })}
+                >
+                  <LinearGradient
+                    colors={['#2563EB', '#0D9488']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.featuredCourseGradient}
+                  >
+                    <View style={styles.featuredCourseContent}>
+                      <View style={styles.featuredCourseInfo}>
+                        <Text style={styles.featuredCourseCategory}>CONTINUE</Text>
+                        <Text style={styles.featuredCourseTitle} numberOfLines={2}>
+                          {featuredCourse.title}
+                        </Text>
+                        <Text style={styles.featuredCourseProgress}>
+                          {featuredCourse.progress}% Complete
+                        </Text>
+                      </View>
+                      <View style={styles.featuredCourseImageContainer}>
+                        <Shield color="white" size={48} />
+                      </View>
+                    </View>
+                  </LinearGradient>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            <View style={styles.section}>
+              <LatestAchievements achievements={globalAchievements.slice(0, 3)} />
+            </View>
+
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Security News</Text>
+              </View>
+              <SecurityNewsPreview />
+            </View>
           </>
         )}
-        
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Recommended For You</Text>
-        </View>
-        
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.recommendedCoursesContainer}
-        >
-          {recommendedCourses.map((course) => (
-            <RecommendedCourseCard key={course.id} course={course} />
-          ))}
-        </ScrollView>
-        
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Latest Achievements</Text>
-        </View>
-        
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.achievementsContainer}
-        >
-          <AchievementCard
-            title="Quick Learner"
-            description="Complete 5 courses in Cybersecurity Basics"
-            icon={<Trophy color={Colors.dark.primary} size={24} />}
-            progress={60}
-            color={Colors.dark.primary}
-            onPress={() => router.push('/(screens)/badges')}
-          />
-          <AchievementCard
-            title="Quiz Master"
-            description="Score 90%+ in 3 security assessment quizzes"
-            icon={<Activity color={Colors.dark.warning} size={24} />}
-            progress={30}
-            color={Colors.dark.warning}
-            onPress={() => router.push('/(screens)/badges')}
-          />
-          <AchievementCard
-            title="Security Expert"
-            description="Complete all advanced security modules"
-            icon={<Shield color={Colors.dark.secondary} size={24} />}
-            progress={45}
-            color={Colors.dark.secondary}
-            onPress={() => router.push('/(screens)/badges')}
-          />
-        </ScrollView>
-        
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Security News</Text>
-        </View>
-        
-        <TouchableOpacity style={styles.newsCard} onPress={handleNewsPress}>
-          <View style={styles.newsIconContainer}>
-            <AlertTriangle color={Colors.dark.warning} size={24} />
-          </View>
-          
-          <View style={styles.newsContent}>
-            <View style={styles.newsHeader}>
-              <Text style={styles.newsCategory}>{latestNews.category}</Text>
-              <Text style={styles.newsDate}>{latestNews.date}</Text>
-            </View>
-            
-            <Text style={styles.newsTitle}>{latestNews.title}</Text>
-            <Text style={styles.newsDescription} numberOfLines={2}>
-              {latestNews.summary}
-            </Text>
-            
-            <View style={styles.newsFooter}>
-              <Text style={styles.readMoreText}>Read More</Text>
-              <ChevronRight color={Colors.dark.primary} size={16} />
-            </View>
-          </View>
-        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
 }
+
+interface LatestAchievementsProps {
+  achievements: Achievement[];
+}
+
+const LatestAchievements = ({ achievements }: LatestAchievementsProps) => {
+  const router = useRouter();
+
+  return (
+    <>
+      <TouchableOpacity 
+        style={styles.sectionHeader}
+        onPress={() => router.push('/(screens)/badges')}
+      >
+        <View style={styles.sectionTitleContainer}>
+          <Trophy size={20} color={Colors.dark.primary} />
+          <Text style={styles.sectionTitle}>Latest Achievements</Text>
+        </View>
+        <ChevronRight size={20} color={Colors.dark.text} style={{ opacity: 0.6 }} />
+      </TouchableOpacity>
+      
+      <ScrollView 
+        horizontal 
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.achievementsContainer}
+      >
+        {achievements.map((achievement: Achievement) => (
+          <TouchableOpacity 
+            key={achievement.id} 
+            style={styles.achievementCard}
+            onPress={() => router.push('/(screens)/badges')}
+          >
+            <View style={[
+              styles.achievementIcon,
+              { backgroundColor: achievement.color + '20' }
+            ]}>
+              <Text style={styles.achievementEmoji}>{achievement.icon}</Text>
+            </View>
+            <View style={styles.achievementContent}>
+              <Text style={styles.achievementTitle}>{achievement.title}</Text>
+              <Text style={styles.achievementDescription} numberOfLines={2}>
+                {achievement.description}
+              </Text>
+              <View style={styles.progressContainer}>
+                <View 
+                  style={[
+                    styles.progressBar,
+                    { 
+                      width: `${achievement.progress}%`,
+                      backgroundColor: achievement.color
+                    }
+                  ]} 
+                />
+              </View>
+              <Text style={[styles.progressText, { color: achievement.color }]}>
+                {achievement.progress}% Complete
+              </Text>
+            </View>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+    </>
+  );
+};
+
+const SecurityNewsPreview = () => {
+  const router = useRouter();
+  const latestNews = mockNewsArticles[0]; // Get the most recent news article
+
+  const getCategoryColor = (category: string) => {
+    switch (category.toLowerCase()) {
+      case 'active threats':
+        return '#FF6B6B';
+      case 'security tips':
+        return '#4ECB71';
+      case 'education':
+        return '#4DABF7';
+      case 'industry news':
+        return '#9775FA';
+      case 'tech updates':
+        return '#FFB057';
+      default:
+        return Colors.dark.primary;
+    }
+  };
+
+  const getCategoryIcon = (category: string) => {
+    switch (category.toLowerCase()) {
+      case 'active threats':
+        return AlertTriangle;
+      case 'security tips':
+        return Shield;
+      case 'education':
+        return BookOpen;
+      case 'industry news':
+        return Target;
+      case 'tech updates':
+        return Settings;
+      default:
+        return TrendingUp;
+    }
+  };
+
+  const Icon = getCategoryIcon(latestNews.category);
+  const categoryColor = getCategoryColor(latestNews.category);
+
+  return (
+    <TouchableOpacity 
+      style={styles.newsCard}
+      onPress={() => router.push('/news')}
+    >
+      <View style={[
+        styles.newsIconContainer,
+        { backgroundColor: categoryColor + '20' }
+      ]}>
+        <Icon size={24} color={categoryColor} />
+      </View>
+      <View style={styles.newsContent}>
+        <View style={styles.newsHeader}>
+          <View style={styles.categoryContainer}>
+            <Text style={[styles.newsCategory, { color: categoryColor }]}>
+              {latestNews.category}
+            </Text>
+            <Text style={styles.newsDate}>{latestNews.date}</Text>
+          </View>
+          {latestNews.views && (
+            <View style={styles.viewsContainer}>
+              <Eye size={14} color={Colors.dark.text} style={styles.viewIcon} />
+              <Text style={styles.viewsText}>
+                {latestNews.views.toLocaleString()}
+              </Text>
+            </View>
+          )}
+        </View>
+        <Text style={styles.newsTitle} numberOfLines={2}>
+          {latestNews.title}
+        </Text>
+        <Text style={styles.newsDescription} numberOfLines={2}>
+          {latestNews.summary}
+        </Text>
+        <View style={styles.newsFooter}>
+          <Text style={styles.readMoreText}>Read more</Text>
+          <ChevronRight size={16} color={Colors.dark.primary} />
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -186,9 +350,6 @@ const styles = StyleSheet.create({
     paddingBottom: 120,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
     paddingVertical: Layout.spacing.lg,
   },
   welcomeText: {
@@ -202,20 +363,19 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.xxl,
     color: Colors.dark.text,
   },
-  notificationButton: {
-    width: 48,
-    height: 48,
-    borderRadius: Layout.borderRadius.round,
-    backgroundColor: Colors.dark.card,
-    justifyContent: 'center',
-    alignItems: 'center',
+  section: {
+    marginTop: Layout.spacing.xl,
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: Layout.spacing.xl,
     marginBottom: Layout.spacing.md,
+  },
+  sectionTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Layout.spacing.sm,
   },
   sectionTitle: {
     fontFamily: fonts.heading,
@@ -254,6 +414,7 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.xl,
     color: Colors.dark.text,
     marginBottom: Layout.spacing.sm,
+    flexShrink: 1,
   },
   featuredCourseProgress: {
     fontFamily: fonts.bodyMedium,
@@ -272,7 +433,7 @@ const styles = StyleSheet.create({
     paddingVertical: Layout.spacing.sm,
   },
   achievementsContainer: {
-    paddingVertical: Layout.spacing.sm,
+    paddingVertical: Layout.spacing.xs,
   },
   newsCard: {
     flexDirection: 'row',
@@ -285,7 +446,6 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: Layout.borderRadius.medium,
-    backgroundColor: Colors.dark.warning + '20',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: Layout.spacing.md,
@@ -299,10 +459,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: Layout.spacing.xs,
   },
+  categoryContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   newsCategory: {
     fontFamily: fonts.bodyMedium,
     fontSize: fontSizes.xs,
-    color: Colors.dark.warning,
+    marginRight: Layout.spacing.sm,
   },
   newsDate: {
     fontFamily: fonts.body,
@@ -332,5 +496,70 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.sm,
     color: Colors.dark.primary,
     marginRight: Layout.spacing.xs,
+  },
+  viewsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  viewIcon: {
+    marginRight: 4,
+    opacity: 0.6,
+  },
+  viewsText: {
+    fontFamily: fonts.body,
+    fontSize: fontSizes.xs,
+    color: Colors.dark.text,
+    opacity: 0.6,
+  },
+  achievementCard: {
+    flexDirection: 'row',
+    backgroundColor: Colors.dark.card,
+    borderRadius: Layout.borderRadius.large,
+    padding: Layout.spacing.md,
+    marginRight: Layout.spacing.md,
+    width: 300,
+    alignItems: 'flex-start',
+  },
+  achievementIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: Layout.borderRadius.medium,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: Layout.spacing.md,
+  },
+  achievementEmoji: {
+    fontSize: 24,
+  },
+  achievementContent: {
+    flex: 1,
+  },
+  achievementTitle: {
+    fontFamily: fonts.bodyBold,
+    fontSize: fontSizes.md,
+    color: Colors.dark.text,
+    marginBottom: Layout.spacing.xs,
+  },
+  achievementDescription: {
+    fontFamily: fonts.body,
+    fontSize: fontSizes.sm,
+    color: Colors.dark.text,
+    opacity: 0.8,
+    marginBottom: Layout.spacing.md,
+    lineHeight: fontSizes.sm * 1.4,
+  },
+  progressContainer: {
+    height: 4,
+    backgroundColor: Colors.dark.border,
+    borderRadius: Layout.borderRadius.round,
+    marginBottom: Layout.spacing.xs,
+  },
+  progressBar: {
+    height: '100%',
+    borderRadius: Layout.borderRadius.round,
+  },
+  progressText: {
+    fontFamily: fonts.bodyMedium,
+    fontSize: fontSizes.xs,
   },
 });

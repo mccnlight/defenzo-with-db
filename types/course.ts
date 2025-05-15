@@ -10,6 +10,9 @@ export interface Course {
   level: 'Beginner' | 'Intermediate' | 'Advanced';
   tags: string[];
   achievements?: Achievement[];
+  rating: number;
+  learners: number;
+  recommended?: boolean;
 }
 
 export interface Achievement {
@@ -56,6 +59,8 @@ export interface Scenario {
 
 export interface VisualTask {
   id: string;
+  title: string;
+  description: string;
   image: string;
   hotspots: Hotspot[];
 }
