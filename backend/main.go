@@ -1,16 +1,22 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
+	"time"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
+	_ "github.com/mattn/go-sqlite3"
 	"github.com/rs/cors"
+	"golang.org/x/crypto/bcrypt"
 )
 
 // ScanResult represents the response from VirusTotal
@@ -29,6 +35,50 @@ type PasswordCheckResult struct {
 	Score       int      `json:"score"`
 	Label       string   `json:"label"`
 	Suggestions []string `json:"suggestions"`
+}
+
+var db *sql.DB
+var jwtSecret = []byte("your_secret_key_here") // Change this to a secure random value in production
+
+func initDB() {
+	var err error
+	db, err = sql.Open("sqlite3", "users.db")
+	if err != nil {
+		log.Fatalf("Failed to open database: %v", err)
+	}
+	createTable := `CREATE TABLE IF NOT EXISTS users (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		email TEXT NOT NULL UNIQUE,
+		password_hash TEXT NOT NULL,
+		full_name TEXT,
+		profile_picture_url TEXT,
+		created_at DATETIME NOT NULL
+	);`
+	_, err = db.Exec(createTable)
+	if err != nil {
+		log.Fatalf("Failed to create users table: %v", err)
+	}
+	log.Println("Database initialized and users table ready.")
+}
+
+func migrateDB() {
+	// Add full_name column if it doesn't exist
+	_, err := db.Exec(`
+		ALTER TABLE users ADD COLUMN full_name TEXT;
+	`)
+	if err != nil {
+		// Ignore error if column already exists
+		log.Printf("Note: full_name column may already exist: %v", err)
+	}
+
+	// Add profile_picture_url column if it doesn't exist
+	_, err = db.Exec(`
+		ALTER TABLE users ADD COLUMN profile_picture_url TEXT;
+	`)
+	if err != nil {
+		// Ignore error if column already exists
+		log.Printf("Note: profile_picture_url column may already exist: %v", err)
+	}
 }
 
 func main() {
@@ -54,6 +104,10 @@ func main() {
 	r := mux.NewRouter()
 	log.Println("Router created")
 
+	// Serve static files from uploads directory
+	fs := http.FileServer(http.Dir("uploads"))
+	r.PathPrefix("/uploads/").Handler(http.StripPrefix("/uploads/", fs))
+
 	// Define routes
 	r.HandleFunc("/api/scan", func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Received scan request from %s", r.RemoteAddr)
@@ -62,6 +116,19 @@ func main() {
 
 	// Password check endpoint
 	r.HandleFunc("/api/password-check", handlePasswordCheck).Methods("POST")
+
+	// Register endpoint
+	r.HandleFunc("/api/register", handleRegister).Methods("POST")
+
+	// Login endpoint
+	r.HandleFunc("/api/login", handleLogin).Methods("POST")
+
+	// Profile picture upload endpoint
+	r.HandleFunc("/api/profile/picture", handleProfilePictureUpload).Methods("POST")
+
+	// Profile endpoint
+	r.HandleFunc("/api/profile", handleGetProfile).Methods("GET")
+
 	log.Println("Routes defined")
 
 	// Configure CORS
@@ -81,6 +148,9 @@ func main() {
 	if port == "" {
 		port = "8081"
 	}
+
+	initDB()
+	migrateDB()
 
 	log.Printf("Server starting on port %s...\n", port)
 	log.Fatal(http.ListenAndServe(":"+port, handler))
@@ -251,4 +321,256 @@ func checkPasswordComplexity(password string) PasswordCheckResult {
 		Label:       label,
 		Suggestions: suggestions,
 	}
+}
+
+func handleRegister(w http.ResponseWriter, r *http.Request) {
+	log.Printf("Handling user registration request")
+	w.Header().Set("Content-Type", "application/json")
+
+	var requestBody struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+		FullName string `json:"full_name"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
+		log.Printf("Error decoding registration request: %v", err)
+		http.Error(w, `{"error": "Invalid request body"}`, http.StatusBadRequest)
+		return
+	}
+	if requestBody.Email == "" || requestBody.Password == "" {
+		log.Printf("Empty email or password received")
+		http.Error(w, `{"error": "Email and password are required"}`, http.StatusBadRequest)
+		return
+	}
+
+	// Check if user already exists
+	var exists int
+	err := db.QueryRow("SELECT COUNT(*) FROM users WHERE email = ?", requestBody.Email).Scan(&exists)
+	if err != nil {
+		log.Printf("Database error: %v", err)
+		http.Error(w, `{"error": "Database error"}`, http.StatusInternalServerError)
+		return
+	}
+	if exists > 0 {
+		log.Printf("User already exists: %s", requestBody.Email)
+		http.Error(w, `{"error": "User already exists"}`, http.StatusConflict)
+		return
+	}
+
+	// Hash the password
+	hash, err := bcrypt.GenerateFromPassword([]byte(requestBody.Password), bcrypt.DefaultCost)
+	if err != nil {
+		log.Printf("Error hashing password: %v", err)
+		http.Error(w, `{"error": "Failed to hash password"}`, http.StatusInternalServerError)
+		return
+	}
+
+	// Insert user into database
+	_, err = db.Exec("INSERT INTO users (email, password_hash, full_name, created_at) VALUES (?, ?, ?, ?)",
+		requestBody.Email, string(hash), requestBody.FullName, time.Now())
+	if err != nil {
+		log.Printf("Error inserting user: %v", err)
+		http.Error(w, `{"error": "Failed to register user"}`, http.StatusInternalServerError)
+		return
+	}
+
+	log.Printf("User registered: %s", requestBody.Email)
+	w.WriteHeader(http.StatusCreated)
+	w.Write([]byte(`{"success": true}`))
+}
+
+func handleLogin(w http.ResponseWriter, r *http.Request) {
+	log.Printf("Handling user login request")
+	w.Header().Set("Content-Type", "application/json")
+
+	var requestBody struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
+		log.Printf("Error decoding login request: %v", err)
+		http.Error(w, `{"error": "Invalid request body"}`, http.StatusBadRequest)
+		return
+	}
+	if requestBody.Email == "" || requestBody.Password == "" {
+		log.Printf("Empty email or password received")
+		http.Error(w, `{"error": "Email and password are required"}`, http.StatusBadRequest)
+		return
+	}
+
+	// Look up user
+	var id int
+	var passwordHash string
+	err := db.QueryRow("SELECT id, password_hash FROM users WHERE email = ?", requestBody.Email).Scan(&id, &passwordHash)
+	if err == sql.ErrNoRows {
+		log.Printf("User not found: %s", requestBody.Email)
+		http.Error(w, `{"error": "Invalid email or password"}`, http.StatusUnauthorized)
+		return
+	} else if err != nil {
+		log.Printf("Database error: %v", err)
+		http.Error(w, `{"error": "Database error"}`, http.StatusInternalServerError)
+		return
+	}
+
+	// Compare password
+	err = bcrypt.CompareHashAndPassword([]byte(passwordHash), []byte(requestBody.Password))
+	if err != nil {
+		log.Printf("Invalid password for user: %s", requestBody.Email)
+		http.Error(w, `{"error": "Invalid email or password"}`, http.StatusUnauthorized)
+		return
+	}
+
+	// Create JWT
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"user_id": id,
+		"email":   requestBody.Email,
+		"exp":     time.Now().Add(24 * time.Hour).Unix(),
+	})
+	tokenString, err := token.SignedString(jwtSecret)
+	if err != nil {
+		log.Printf("Error signing JWT: %v", err)
+		http.Error(w, `{"error": "Failed to create token"}`, http.StatusInternalServerError)
+		return
+	}
+
+	log.Printf("User logged in: %s", requestBody.Email)
+	w.Write([]byte(fmt.Sprintf(`{"token": "%s"}`, tokenString)))
+}
+
+func handleProfilePictureUpload(w http.ResponseWriter, r *http.Request) {
+	log.Printf("Handling profile picture upload request")
+
+	// Get user ID from JWT token
+	tokenString := r.Header.Get("Authorization")
+	if tokenString == "" {
+		http.Error(w, `{"error": "Authorization token required"}`, http.StatusUnauthorized)
+		return
+	}
+
+	// Remove "Bearer " prefix if present
+	if len(tokenString) > 7 && tokenString[:7] == "Bearer " {
+		tokenString = tokenString[7:]
+	}
+
+	// Parse and validate token
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		return jwtSecret, nil
+	})
+	if err != nil {
+		http.Error(w, `{"error": "Invalid token"}`, http.StatusUnauthorized)
+		return
+	}
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		http.Error(w, `{"error": "Invalid token claims"}`, http.StatusUnauthorized)
+		return
+	}
+
+	userID, ok := claims["user_id"].(float64)
+	if !ok {
+		http.Error(w, `{"error": "Invalid user ID in token"}`, http.StatusUnauthorized)
+		return
+	}
+
+	// Parse multipart form
+	err = r.ParseMultipartForm(10 << 20) // 10 MB max
+	if err != nil {
+		http.Error(w, `{"error": "Failed to parse form"}`, http.StatusBadRequest)
+		return
+	}
+
+	file, handler, err := r.FormFile("profile_picture")
+	if err != nil {
+		http.Error(w, `{"error": "Failed to get file"}`, http.StatusBadRequest)
+		return
+	}
+	defer file.Close()
+
+	// Create uploads directory if it doesn't exist
+	uploadDir := "uploads/profile_pictures"
+	if err := os.MkdirAll(uploadDir, 0755); err != nil {
+		log.Printf("Error creating upload directory: %v", err)
+		http.Error(w, `{"error": "Failed to create upload directory"}`, http.StatusInternalServerError)
+		return
+	}
+
+	// Generate unique filename
+	ext := filepath.Ext(handler.Filename)
+	filename := fmt.Sprintf("%d_%d%s", int(userID), time.Now().Unix(), ext)
+	filepath := filepath.Join(uploadDir, filename)
+
+	// Create the file
+	dst, err := os.Create(filepath)
+	if err != nil {
+		log.Printf("Error creating file: %v", err)
+		http.Error(w, `{"error": "Failed to save file"}`, http.StatusInternalServerError)
+		return
+	}
+	defer dst.Close()
+
+	// Copy the uploaded file to the destination file
+	if _, err := io.Copy(dst, file); err != nil {
+		log.Printf("Error copying file: %v", err)
+		http.Error(w, `{"error": "Failed to save file"}`, http.StatusInternalServerError)
+		return
+	}
+
+	// Update user's profile picture URL in database
+	relativePath := "uploads/profile_pictures/" + filename
+	_, err = db.Exec("UPDATE users SET profile_picture_url = ? WHERE id = ?", relativePath, int(userID))
+	if err != nil {
+		log.Printf("Error updating profile picture URL: %v", err)
+		http.Error(w, `{"error": "Failed to update profile picture URL"}`, http.StatusInternalServerError)
+		return
+	}
+
+	// Return success response with the URL
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{
+		"profile_picture_url": relativePath,
+	})
+}
+
+func handleGetProfile(w http.ResponseWriter, r *http.Request) {
+	tokenString := r.Header.Get("Authorization")
+	if tokenString == "" {
+		http.Error(w, `{"error": "Authorization token required"}`, http.StatusUnauthorized)
+		return
+	}
+	if len(tokenString) > 7 && tokenString[:7] == "Bearer " {
+		tokenString = tokenString[7:]
+	}
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		return jwtSecret, nil
+	})
+	if err != nil {
+		http.Error(w, `{"error": "Invalid token"}`, http.StatusUnauthorized)
+		return
+	}
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		http.Error(w, `{"error": "Invalid token claims"}`, http.StatusUnauthorized)
+		return
+	}
+	userID, ok := claims["user_id"].(float64)
+	if !ok {
+		http.Error(w, `{"error": "Invalid user ID in token"}`, http.StatusUnauthorized)
+		return
+	}
+
+	var email, fullName, profilePictureURL sql.NullString
+	err = db.QueryRow("SELECT email, full_name, profile_picture_url FROM users WHERE id = ?", int(userID)).Scan(&email, &fullName, &profilePictureURL)
+	if err != nil {
+		http.Error(w, `{"error": "User not found"}`, http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"id":                  int(userID),
+		"email":               email.String,
+		"full_name":           fullName.String,
+		"profile_picture_url": profilePictureURL.String,
+	})
 }

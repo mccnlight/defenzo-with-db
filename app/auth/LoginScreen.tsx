@@ -1,22 +1,43 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
-import Colors from '@/constants/Colors';
-import { fonts, fontSizes } from '@/constants/Fonts';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
+import Colors from '../../constants/Colors';
+import { fonts, fontSizes } from '../../constants/Fonts';
+import { login, register, LoginCredentials, RegisterCredentials } from '../services/api';
 
 export default function LoginScreen({ onAuthSuccess }: { onAuthSuccess?: () => void }) {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = () => {
-    // For now, just simulate success
-    if (!email || !password) {
-      setError('Please enter both email and password.');
-      return;
+  const handleSubmit = async () => {
+    try {
+      setError('');
+      setLoading(true);
+
+      if (!email || !password || (!isLogin && !fullName)) {
+        setError('Please fill in all fields.');
+        return;
+      }
+
+      if (isLogin) {
+        const credentials: LoginCredentials = { email, password };
+        await login(credentials);
+      } else {
+        const credentials: RegisterCredentials = { email, password, full_name: fullName };
+        await register(credentials);
+        // After registration, log in the user
+        await login({ email, password });
+      }
+
+      if (onAuthSuccess) onAuthSuccess();
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'An error occurred. Please try again.');
+    } finally {
+      setLoading(false);
     }
-    setError('');
-    if (onAuthSuccess) onAuthSuccess();
   };
 
   return (
@@ -26,6 +47,18 @@ export default function LoginScreen({ onAuthSuccess }: { onAuthSuccess?: () => v
     >
       <View style={styles.card}>
         <Text style={styles.title}>{isLogin ? 'Login' : 'Register'}</Text>
+        
+        {!isLogin && (
+          <TextInput
+            style={styles.input}
+            placeholder="Full Name"
+            placeholderTextColor={Colors.dark.text + '80'}
+            value={fullName}
+            onChangeText={setFullName}
+            autoCapitalize="words"
+          />
+        )}
+        
         <TextInput
           style={styles.input}
           placeholder="Email"
@@ -35,6 +68,7 @@ export default function LoginScreen({ onAuthSuccess }: { onAuthSuccess?: () => v
           autoCapitalize="none"
           keyboardType="email-address"
         />
+        
         <TextInput
           style={styles.input}
           placeholder="Password"
@@ -43,11 +77,30 @@ export default function LoginScreen({ onAuthSuccess }: { onAuthSuccess?: () => v
           onChangeText={setPassword}
           secureTextEntry
         />
+        
         {error ? <Text style={styles.error}>{error}</Text> : null}
-        <TouchableOpacity style={styles.button} onPress={handleSubmit}>
-          <Text style={styles.buttonText}>{isLogin ? 'Login' : 'Register'}</Text>
+        
+        <TouchableOpacity 
+          style={[styles.button, loading && styles.buttonDisabled]} 
+          onPress={handleSubmit}
+          disabled={loading}
+        >
+          {loading ? (
+            <ActivityIndicator color={Colors.dark.text} />
+          ) : (
+            <Text style={styles.buttonText}>
+              {isLogin ? 'Login' : 'Register'}
+            </Text>
+          )}
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => setIsLogin(!isLogin)}>
+        
+        <TouchableOpacity 
+          onPress={() => {
+            setIsLogin(!isLogin);
+            setError('');
+          }}
+          disabled={loading}
+        >
           <Text style={styles.toggleText}>
             {isLogin ? "Don't have an account? Register" : 'Already have an account? Login'}
           </Text>
@@ -102,6 +155,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
+  },
+  buttonDisabled: {
+    opacity: 0.7,
   },
   buttonText: {
     color: Colors.dark.text,

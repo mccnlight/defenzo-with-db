@@ -63,35 +63,35 @@ export default function ToolsScreen() {
 
       // Process VirusTotal results
       const { total_scans, positive_scans } = data.details;
-      
-      let result;
+    
+    let result;
       if (positive_scans === 0) {
-        result = {
-          safe: true,
-          risk: 'none' as const,
+      result = {
+        safe: true,
+        risk: 'none' as const,
           message: `This URL appears to be safe (${total_scans} security vendors checked)`,
-        };
+      };
       } else if (positive_scans <= 2) {
-        result = {
-          safe: false,
-          risk: 'low' as const,
+      result = {
+        safe: false,
+        risk: 'low' as const,
           message: `This URL has been flagged by ${positive_scans} out of ${total_scans} security vendors`,
-        };
+      };
       } else if (positive_scans <= 5) {
-        result = {
-          safe: false,
+      result = {
+        safe: false,
           risk: 'medium' as const,
           message: `This URL has been flagged by ${positive_scans} out of ${total_scans} security vendors`,
-        };
-      } else {
-        result = {
-          safe: false,
+      };
+    } else {
+      result = {
+        safe: false,
           risk: 'high' as const,
           message: `This URL has been flagged as malicious by ${positive_scans} out of ${total_scans} security vendors`,
-        };
-      }
-      
-      setUrlResult(result);
+      };
+    }
+    
+    setUrlResult(result);
     } catch (error) {
       console.error('Error checking URL:', error);
       setUrlResult({
@@ -121,7 +121,7 @@ export default function ToolsScreen() {
       let message = '';
       if (data.suggestions && data.suggestions.length > 0) {
         message = 'Suggestions: ' + data.suggestions.join(', ');
-      } else {
+    } else {
         message = 'This password is ' + data.label.toLowerCase() + ' and secure';
       }
       setPasswordStrength({
@@ -258,7 +258,7 @@ export default function ToolsScreen() {
                 <View style={styles.strengthResult}>
                   <Text style={[styles.strengthLabel, {
                     color: passwordStrength.color
-                  }]}> 
+                  }]}>
                     {passwordStrength.label}
                   </Text>
                 </View>
