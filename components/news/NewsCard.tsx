@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useMemo } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Pressable } from 'react-native';
 import { 
   Eye, 
   AlertTriangle, 
@@ -12,6 +12,12 @@ import {
 import Colors from '@/constants/Colors';
 import Layout from '@/constants/Layout';
 import { fonts, fontSizes } from '@/constants/Fonts';
+import Animated, { 
+  useAnimatedStyle, 
+  withSpring,
+  useSharedValue,
+  withTiming
+} from 'react-native-reanimated';
 
 interface NewsArticle {
   id: string;
@@ -25,10 +31,15 @@ interface NewsArticle {
 interface NewsCardProps {
   article: NewsArticle;
   compact?: boolean; // For home page smaller version
+  onPress?: () => void;
 }
 
-export default function NewsCard({ article, compact = false }: NewsCardProps) {
-  const getCategoryInfo = (category: string) => {
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
+function NewsCard({ article, compact = false, onPress }: NewsCardProps) {
+  const scale = useSharedValue(1);
+  
+  const getCategoryInfo = useMemo(() => (category: string) => {
     switch (category.toLowerCase()) {
       case 'active threats':
         return {
@@ -61,16 +72,32 @@ export default function NewsCard({ article, compact = false }: NewsCardProps) {
           color: Colors.dark.primary
         };
     }
+  }, []);
+
+  const categoryInfo = useMemo(() => getCategoryInfo(article.category), [article.category, getCategoryInfo]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handlePressIn = () => {
+    scale.value = withSpring(0.98, { damping: 15 });
   };
 
-  const categoryInfo = getCategoryInfo(article.category);
+  const handlePressOut = () => {
+    scale.value = withSpring(1, { damping: 15 });
+  };
 
   return (
-    <TouchableOpacity 
+    <AnimatedPressable 
       style={[
         styles.container,
-        compact && styles.compactContainer
+        compact && styles.compactContainer,
+        animatedStyle
       ]}
+      onPress={onPress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
     >
       <View style={styles.header}>
         <View style={[
@@ -114,7 +141,7 @@ export default function NewsCard({ article, compact = false }: NewsCardProps) {
           </View>
         )}
       </View>
-    </TouchableOpacity>
+    </AnimatedPressable>
   );
 }
 
@@ -124,6 +151,14 @@ const styles = StyleSheet.create({
     borderRadius: Layout.borderRadius.large,
     padding: Layout.spacing.md,
     marginBottom: Layout.spacing.md,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
   },
   compactContainer: {
     padding: Layout.spacing.sm,
@@ -191,3 +226,5 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
 });
+
+export default React.memo(NewsCard);

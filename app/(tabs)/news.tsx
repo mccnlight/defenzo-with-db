@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { 
   View, 
   Text, 
   StyleSheet, 
   FlatList, 
-  TouchableOpacity, 
-  ScrollView
+  TouchableOpacity,
+  Platform
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { 
@@ -21,8 +21,37 @@ import Layout from '@/constants/Layout';
 import { fonts, fontSizes } from '@/constants/Fonts';
 import { mockNewsArticles } from '@/data/mockNews';
 import NewsCard from '@/components/news/NewsCard';
+import NewsDetailModal from '@/app/components/news/NewsDetailModal';
+import Animated, { 
+  FadeIn,
+  FadeOut,
+  Layout as LayoutAnimation
+} from 'react-native-reanimated';
 
-const categories = [
+interface NewsArticle {
+  id: string;
+  title: string;
+  category: string;
+  date: string;
+  summary: string;
+  content: string;
+  views?: number;
+  readTime?: string;
+  author?: string;
+  source?: string;
+}
+
+interface Category {
+  id: string;
+  label: string;
+  icon: any; // LucideIcon type
+  color: string;
+  description: string;
+}
+
+const AnimatedFlatList = Animated.createAnimatedComponent(FlatList);
+
+const categories: Category[] = [
   { 
     id: 'all', 
     label: 'All News', 
@@ -67,8 +96,50 @@ const categories = [
   }
 ];
 
+const CategoryButton = React.memo(({ 
+  item, 
+  isActive, 
+  onPress 
+}: { 
+  item: Category;
+  isActive: boolean;
+  onPress: () => void;
+}) => {
+  const Icon = item.icon;
+  
+  return (
+    <TouchableOpacity 
+      style={[
+        styles.categoryButton,
+        isActive && [
+          styles.activeCategoryButton,
+          { borderColor: item.color }
+        ]
+      ]}
+      onPress={onPress}
+    >
+      <View style={[
+        styles.iconContainer,
+        { backgroundColor: isActive ? item.color + '20' : 'transparent' }
+      ]}>
+        <Icon 
+          size={20} 
+          color={isActive ? item.color : Colors.dark.text} 
+        />
+      </View>
+      <Text style={[
+        styles.categoryLabel,
+        isActive && { color: item.color }
+      ]}>
+        {item.label}
+      </Text>
+    </TouchableOpacity>
+  );
+});
+
 export default function NewsScreen() {
   const [activeCategory, setActiveCategory] = useState('all');
+  const [selectedArticle, setSelectedArticle] = useState<NewsArticle | null>(null);
   
   const categoryMap: Record<string, string> = {
     'threats': 'active threats',
@@ -78,11 +149,41 @@ export default function NewsScreen() {
     'updates': 'tech updates'
   };
   
-  const filteredNews = mockNewsArticles.filter(article => {
-    if (activeCategory === 'all') return true;
-    return article.category.toLowerCase() === categoryMap[activeCategory];
-  });
-  
+  const filteredNews = useMemo(() => 
+    mockNewsArticles.filter(article => {
+      if (activeCategory === 'all') return true;
+      return article.category.toLowerCase() === categoryMap[activeCategory];
+    }),
+    [activeCategory]
+  );
+
+  const handleArticlePress = useCallback((article: NewsArticle) => {
+    setSelectedArticle(article);
+  }, []);
+
+  const renderNewsCard = useCallback(({ item }: { item: NewsArticle }) => (
+    <Animated.View
+      entering={FadeIn.duration(300)}
+      layout={LayoutAnimation}
+    >
+      <NewsCard 
+        article={item} 
+        onPress={() => handleArticlePress(item)}
+      />
+    </Animated.View>
+  ), [handleArticlePress]);
+
+  const renderCategoryButton = useCallback(({ item }: { item: Category }) => (
+    <CategoryButton
+      item={item}
+      isActive={activeCategory === item.id}
+      onPress={() => setActiveCategory(item.id)}
+    />
+  ), [activeCategory]);
+
+  const keyExtractor = useCallback((item: NewsArticle) => item.id, []);
+  const categoryKeyExtractor = useCallback((item: Category) => item.id, []);
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
@@ -90,56 +191,41 @@ export default function NewsScreen() {
       </View>
       
       <View style={styles.categoriesContainer}>
-        <FlatList
+        <AnimatedFlatList<Category>
           horizontal
           data={categories}
-          keyExtractor={(item) => item.id}
+          keyExtractor={categoryKeyExtractor}
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.categoriesContent}
-          renderItem={({ item }) => {
-            const Icon = item.icon;
-            const isActive = activeCategory === item.id;
-            return (
-            <TouchableOpacity 
-              style={[
-                  styles.categoryButton,
-                  isActive && [
-                    styles.activeCategoryButton,
-                    { borderColor: item.color }
-                  ]
-              ]}
-                onPress={() => setActiveCategory(item.id)}
-            >
-                <View style={[
-                  styles.iconContainer,
-                  { backgroundColor: isActive ? item.color + '20' : 'transparent' }
-                ]}>
-                  <Icon 
-                    size={20} 
-                    color={isActive ? item.color : Colors.dark.text} 
-                  />
-                </View>
-              <Text style={[
-                  styles.categoryLabel,
-                  isActive && { color: item.color }
-              ]}>
-                {item.label}
-              </Text>
-            </TouchableOpacity>
-            );
-          }}
+          renderItem={renderCategoryButton}
+          initialNumToRender={3}
+          maxToRenderPerBatch={3}
+          windowSize={3}
         />
       </View>
       
-      <FlatList
+      <AnimatedFlatList<NewsArticle>
         data={filteredNews}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <NewsCard article={item} />
-        )}
+        keyExtractor={keyExtractor}
+        renderItem={renderNewsCard}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.newsList}
+        initialNumToRender={5}
+        maxToRenderPerBatch={3}
+        windowSize={5}
+        removeClippedSubviews={Platform.OS === 'android'}
+        maintainVisibleContentPosition={{
+          minIndexForVisible: 0,
+        }}
       />
+
+      {selectedArticle && (
+        <NewsDetailModal
+          visible={true}
+          onClose={() => setSelectedArticle(null)}
+          article={selectedArticle}
+        />
+      )}
     </SafeAreaView>
   );
 }

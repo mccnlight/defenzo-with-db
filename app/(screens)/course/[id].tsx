@@ -130,7 +130,7 @@ export default function CourseScreen() {
         onPress={() => handleLessonPress(lesson)}
       >
         <View style={styles.lessonInfo}>
-          <Text style={styles.lessonNumber}>Урок {index + 1}</Text>
+          <Text style={styles.lessonNumber}>Lesson {index + 1}</Text>
           <Text style={styles.lessonTitle}>{lesson.title}</Text>
           <View style={styles.lessonMeta}>
             <Clock size={14} color={Colors.dark.text} />
@@ -153,7 +153,7 @@ export default function CourseScreen() {
           <ArrowLeft color={Colors.dark.text} size={24} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>
-          {selectedLesson ? 'Урок' : 'Детали курса'}
+          {selectedLesson ? 'Lesson' : 'Course Details'}
         </Text>
       </View>
 
@@ -209,7 +209,7 @@ export default function CourseScreen() {
           </View>
 
           <View style={styles.lessonsSection}>
-            <Text style={styles.sectionTitle}>Содержание курса</Text>
+            <Text style={styles.sectionTitle}>Course Content</Text>
             {renderLessons(course.lessons)}
           </View>
         </ScrollView>

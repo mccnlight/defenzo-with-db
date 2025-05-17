@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useColorScheme } from 'react-native';
+import { useColorScheme, View, StyleSheet } from 'react-native';
 import { 
   useFonts, 
   Inter_400Regular, 
@@ -12,7 +12,7 @@ import {
   PlusJakartaSans_700Bold 
 } from '@expo-google-fonts/plus-jakarta-sans';
 import { SplashScreen } from 'expo-router';
-import { View, StyleSheet } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Colors from '@/constants/Colors';
 
 // Prevent splash screen from auto-hiding
@@ -42,7 +42,7 @@ export default function RootLayout() {
 
 function RootLayoutNav() {
   return (
-    <>
+    <GestureHandlerRootView style={styles.container}>
       <StatusBar style="light" />
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(tabs)" />
@@ -50,18 +50,18 @@ function RootLayoutNav() {
           name="(screens)/badges" 
           options={{ 
             headerShown: false,
-            presentation: 'modal'
+            presentation: 'modal',
+            animation: 'slide_from_bottom'
           }} 
         />
         <Stack.Screen name="+not-found" />
       </Stack>
-    </>
+    </GestureHandlerRootView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.dark.background,
   },
 });

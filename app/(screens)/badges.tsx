@@ -1,10 +1,16 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
 import Colors from '@/constants/Colors';
 import Layout from '@/constants/Layout';
 import { fonts, fontSizes } from '@/constants/Fonts';
 import { globalAchievements } from '@/app/(tabs)';
+import AchievementDetailModal from '@/app/components/badges/AchievementDetailModal';
+import { X } from 'lucide-react-native';
+import Animated, { FadeIn } from 'react-native-reanimated';
+
+const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
 
 // Achievement categories
 const achievementCategories = [
@@ -46,11 +52,18 @@ const achievementCategories = [
 ];
 
 export default function BadgesScreen() {
+  const [selectedAchievement, setSelectedAchievement] = useState(null);
+
   const renderAchievement = (achievement: any) => {
     const nextProgress = Math.min(100, Math.ceil(achievement.progress / 20) * 20);
     
     return (
-      <View key={achievement.id} style={styles.achievementCard}>
+      <AnimatedTouchableOpacity 
+        key={achievement.id} 
+        style={styles.achievementCard}
+        onPress={() => setSelectedAchievement(achievement)}
+        entering={FadeIn.duration(300).delay(achievement.id.length * 100)}
+      >
         <View style={[
           styles.achievementIcon,
           { backgroundColor: achievement.color + '20' }
@@ -86,22 +99,29 @@ export default function BadgesScreen() {
             </View>
           </View>
         </View>
-      </View>
+      </AnimatedTouchableOpacity>
     );
   };
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Badges & Certificates</Text>
+        <TouchableOpacity 
+          style={styles.closeButton}
+          onPress={() => router.back()}
+        >
+          <X size={24} color={Colors.dark.text} />
+        </TouchableOpacity>
+      </View>
+
       <ScrollView 
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Badges & Certificates</Text>
-          <Text style={styles.headerDescription}>
-            Track your achievements and progress in cybersecurity learning
-          </Text>
-        </View>
+        <Text style={styles.headerDescription}>
+          Track your achievements and progress in cybersecurity learning
+        </Text>
 
         {achievementCategories.map(category => (
           <View key={category.id} style={styles.section}>
@@ -115,6 +135,14 @@ export default function BadgesScreen() {
           </View>
         ))}
       </ScrollView>
+
+      {selectedAchievement && (
+        <AchievementDetailModal
+          visible={true}
+          onClose={() => setSelectedAchievement(null)}
+          achievement={selectedAchievement}
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -124,23 +152,35 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.dark.background,
   },
-  scrollContent: {
-    paddingBottom: 120,
-  },
   header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     padding: Layout.spacing.lg,
+  },
+  closeButton: {
+    width: 40,
+    height: 40,
+    borderRadius: Layout.borderRadius.round,
+    backgroundColor: Colors.dark.card,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   headerTitle: {
     fontFamily: fonts.heading,
     fontSize: fontSizes.xxl,
     color: Colors.dark.text,
-    marginBottom: Layout.spacing.sm,
+  },
+  scrollContent: {
+    paddingBottom: 120,
   },
   headerDescription: {
     fontFamily: fonts.body,
     fontSize: fontSizes.md,
     color: Colors.dark.text,
     opacity: 0.8,
+    paddingHorizontal: Layout.spacing.lg,
+    marginBottom: Layout.spacing.xl,
   },
   section: {
     padding: Layout.spacing.lg,

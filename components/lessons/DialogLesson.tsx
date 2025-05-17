@@ -4,20 +4,32 @@ import {
   Text, 
   StyleSheet, 
   TouchableOpacity,
-  ScrollView,
-  Animated
+  ScrollView
 } from 'react-native';
-import { MessageCircle, ChevronRight } from 'lucide-react-native';
+import { MessageCircle, ChevronRight, Check, X } from 'lucide-react-native';
 import Colors from '@/constants/Colors';
 import Layout from '@/constants/Layout';
 import { fonts, fontSizes } from '@/constants/Fonts';
 import { Question } from '@/types/course';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withTiming,
+  withSequence,
+  FadeIn,
+  FadeOut,
+  SlideInRight,
+  SlideOutLeft
+} from 'react-native-reanimated';
 
 interface DialogLessonProps {
   introduction: string;
   questions: Question[];
   onComplete: () => void;
 }
+
+const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
 
 export default function DialogLesson({ 
   introduction, 
@@ -27,7 +39,9 @@ export default function DialogLesson({
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [showExplanation, setShowExplanation] = useState(false);
-  const [fadeAnim] = useState(new Animated.Value(1));
+  
+  const scale = useSharedValue(1);
+  const progress = useSharedValue(0);
 
   const currentQuestion = questions[currentQuestionIndex];
   const isLastQuestion = currentQuestionIndex === questions.length - 1;
@@ -35,6 +49,12 @@ export default function DialogLesson({
   const handleAnswer = (answer: string) => {
     setSelectedAnswer(answer);
     setShowExplanation(true);
+    
+    // Animate progress bar
+    progress.value = withSpring(
+      ((currentQuestionIndex + 1) / questions.length) * 100,
+      { damping: 15 }
+    );
   };
 
   const handleNext = () => {
@@ -43,108 +63,128 @@ export default function DialogLesson({
       return;
     }
 
-    Animated.sequence([
-      Animated.timing(fadeAnim, {
-        toValue: 0,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-    ]).start();
-
     setCurrentQuestionIndex(prev => prev + 1);
     setSelectedAnswer(null);
     setShowExplanation(false);
   };
+
+  const handlePressIn = () => {
+    scale.value = withSpring(0.95);
+  };
+
+  const handlePressOut = () => {
+    scale.value = withSpring(1);
+  };
+
+  const buttonStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const progressStyle = useAnimatedStyle(() => ({
+    width: `${progress.value}%`,
+  }));
 
   const isCorrectAnswer = selectedAnswer === currentQuestion.correctAnswer;
 
   return (
     <ScrollView 
       style={styles.container}
-      contentContainerStyle={styles.content}
+      contentContainerStyle={styles.contentContainer}
+      showsVerticalScrollIndicator={false}
     >
       {currentQuestionIndex === 0 && (
-        <View style={styles.introContainer}>
-          <MessageCircle color={Colors.dark.primary} size={32} />
-          <Text style={styles.introText}>{introduction}</Text>
-        </View>
-      )}
-
-      <Animated.View style={[styles.questionContainer, { opacity: fadeAnim }]}>
-        <Text style={styles.questionText}>{currentQuestion.text}</Text>
-
-        <View style={styles.optionsContainer}>
-          {currentQuestion.options?.map((option, index) => (
-            <TouchableOpacity
-              key={index}
-              style={[
-                styles.optionButton,
-                selectedAnswer === option && (
-                  isCorrectAnswer 
-                    ? styles.correctOption 
-                    : styles.incorrectOption
-                )
-              ]}
-              onPress={() => handleAnswer(option)}
-              disabled={showExplanation}
-            >
-              <Text 
-                style={[
-                  styles.optionText,
-                  selectedAnswer === option && styles.selectedOptionText
-                ]}
-              >
-                {option}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        {showExplanation && (
-          <View style={styles.explanationContainer}>
-            <Text style={[
-              styles.explanationText,
-              isCorrectAnswer ? styles.correctText : styles.incorrectText
-            ]}>
-              {isCorrectAnswer ? 'Правильно!' : 'Попробуйте еще раз'}
-            </Text>
-            <Text style={styles.explanationDetails}>
-              {currentQuestion.explanation}
-            </Text>
-          </View>
-        )}
-      </Animated.View>
-
-      {showExplanation && (
-        <TouchableOpacity 
-          style={styles.nextButton} 
-          onPress={handleNext}
+        <Animated.View 
+          entering={FadeIn.duration(500)}
+          style={styles.introductionContainer}
         >
-          <Text style={styles.nextButtonText}>
-            {isLastQuestion ? 'Завершить' : 'Следующий вопрос'}
-          </Text>
-          <ChevronRight color={Colors.dark.text} size={20} />
-        </TouchableOpacity>
+          <MessageCircle size={24} color={Colors.dark.primary} />
+          <Text style={styles.introductionText}>{introduction}</Text>
+        </Animated.View>
       )}
 
       <View style={styles.progressContainer}>
         <View style={styles.progressBar}>
-          <View 
-            style={[
-              styles.progressFill,
-              { width: `${((currentQuestionIndex + 1) / questions.length) * 100}%` }
-            ]} 
-          />
+          <Animated.View style={[styles.progressFill, progressStyle]} />
         </View>
         <Text style={styles.progressText}>
-          {currentQuestionIndex + 1} из {questions.length}
+          Question {currentQuestionIndex + 1} of {questions.length}
         </Text>
       </View>
+
+      <Animated.View
+        entering={SlideInRight.duration(300)}
+        exiting={SlideOutLeft.duration(300)}
+        style={styles.questionContainer}
+      >
+        <Text style={styles.questionText}>{currentQuestion.text}</Text>
+
+        <View style={styles.optionsContainer}>
+          {currentQuestion.type === 'multiple_choice' && 
+            currentQuestion.options?.map((option, index) => (
+              <AnimatedTouchableOpacity
+                key={index}
+                style={[
+                  styles.optionButton,
+                  selectedAnswer === option && styles.selectedOption,
+                  showExplanation && option === currentQuestion.correctAnswer && styles.correctOption,
+                  showExplanation && selectedAnswer === option && option !== currentQuestion.correctAnswer && styles.incorrectOption
+                ]}
+                onPress={() => !showExplanation && handleAnswer(option)}
+                disabled={showExplanation}
+                entering={FadeIn.duration(300).delay(index * 100)}
+              >
+                <Text style={[
+                  styles.optionText,
+                  selectedAnswer === option && styles.selectedOptionText
+                ]}>
+                  {option}
+                </Text>
+                {showExplanation && option === currentQuestion.correctAnswer && (
+                  <Check size={20} color={Colors.dark.success} />
+                )}
+                {showExplanation && selectedAnswer === option && option !== currentQuestion.correctAnswer && (
+                  <X size={20} color={Colors.dark.error} />
+                )}
+              </AnimatedTouchableOpacity>
+            ))
+          }
+        </View>
+
+        {showExplanation && (
+          <Animated.View 
+            entering={FadeIn.duration(300)}
+            style={[
+              styles.explanationContainer,
+              isCorrectAnswer ? styles.correctExplanation : styles.incorrectExplanation
+            ]}
+          >
+            <Text style={[
+              styles.explanationTitle,
+              isCorrectAnswer ? styles.correctText : styles.incorrectText
+            ]}>
+              {isCorrectAnswer ? 'Correct!' : 'Incorrect'}
+            </Text>
+            <Text style={styles.explanationText}>
+              {currentQuestion.explanation}
+            </Text>
+          </Animated.View>
+        )}
+
+        {showExplanation && (
+          <AnimatedTouchableOpacity
+            style={[styles.nextButton, buttonStyle]}
+            onPress={handleNext}
+            onPressIn={handlePressIn}
+            onPressOut={handlePressOut}
+            entering={FadeIn.duration(300)}
+          >
+            <Text style={styles.nextButtonText}>
+              {isLastQuestion ? 'Complete' : 'Next Question'}
+            </Text>
+            <ChevronRight size={20} color={Colors.dark.text} />
+          </AnimatedTouchableOpacity>
+        )}
+      </Animated.View>
     </ScrollView>
   );
 }
@@ -154,102 +194,34 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.dark.background,
   },
-  content: {
+  contentContainer: {
     padding: Layout.spacing.lg,
   },
-  introContainer: {
-    alignItems: 'center',
-    marginBottom: Layout.spacing.xl,
-  },
-  introText: {
-    fontFamily: fonts.body,
-    fontSize: fontSizes.lg,
-    color: Colors.dark.text,
-    textAlign: 'center',
-    marginTop: Layout.spacing.md,
-  },
-  questionContainer: {
-    marginBottom: Layout.spacing.xl,
-  },
-  questionText: {
-    fontFamily: fonts.heading,
-    fontSize: fontSizes.xl,
-    color: Colors.dark.text,
-    marginBottom: Layout.spacing.lg,
-  },
-  optionsContainer: {
-    gap: Layout.spacing.md,
-  },
-  optionButton: {
-    backgroundColor: Colors.dark.card,
-    padding: Layout.spacing.md,
-    borderRadius: Layout.borderRadius.large,
-    borderWidth: 2,
-    borderColor: 'transparent',
-  },
-  correctOption: {
-    backgroundColor: Colors.dark.success + '20',
-    borderColor: Colors.dark.success,
-  },
-  incorrectOption: {
-    backgroundColor: Colors.dark.error + '20',
-    borderColor: Colors.dark.error,
-  },
-  optionText: {
-    fontFamily: fonts.bodyMedium,
-    fontSize: fontSizes.md,
-    color: Colors.dark.text,
-  },
-  selectedOptionText: {
-    fontFamily: fonts.bodyBold,
-  },
-  explanationContainer: {
-    backgroundColor: Colors.dark.card,
-    padding: Layout.spacing.md,
-    borderRadius: Layout.borderRadius.large,
-    marginTop: Layout.spacing.lg,
-  },
-  explanationText: {
-    fontFamily: fonts.bodyBold,
-    fontSize: fontSizes.md,
-    marginBottom: Layout.spacing.sm,
-  },
-  correctText: {
-    color: Colors.dark.success,
-  },
-  incorrectText: {
-    color: Colors.dark.error,
-  },
-  explanationDetails: {
-    fontFamily: fonts.body,
-    fontSize: fontSizes.md,
-    color: Colors.dark.text,
-    opacity: 0.8,
-  },
-  nextButton: {
+  introductionContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Colors.dark.primary,
-    padding: Layout.spacing.md,
+    backgroundColor: Colors.dark.primary + '20',
+    padding: Layout.spacing.lg,
     borderRadius: Layout.borderRadius.large,
     marginBottom: Layout.spacing.xl,
   },
-  nextButtonText: {
-    fontFamily: fonts.bodyBold,
+  introductionText: {
+    flex: 1,
+    fontFamily: fonts.body,
     fontSize: fontSizes.md,
     color: Colors.dark.text,
-    marginRight: Layout.spacing.xs,
+    marginLeft: Layout.spacing.md,
+    lineHeight: fontSizes.md * 1.5,
   },
   progressContainer: {
-    marginTop: 'auto',
+    marginBottom: Layout.spacing.xl,
   },
   progressBar: {
     height: 4,
-    backgroundColor: Colors.dark.card,
+    backgroundColor: Colors.dark.border,
     borderRadius: Layout.borderRadius.round,
-    marginBottom: Layout.spacing.xs,
     overflow: 'hidden',
+    marginBottom: Layout.spacing.xs,
   },
   progressFill: {
     height: '100%',
@@ -260,6 +232,94 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bodyMedium,
     fontSize: fontSizes.sm,
     color: Colors.dark.text,
-    textAlign: 'center',
+    opacity: 0.7,
+  },
+  questionContainer: {
+    backgroundColor: Colors.dark.card,
+    borderRadius: Layout.borderRadius.large,
+    padding: Layout.spacing.lg,
+  },
+  questionText: {
+    fontFamily: fonts.heading,
+    fontSize: fontSizes.xl,
+    color: Colors.dark.text,
+    marginBottom: Layout.spacing.xl,
+  },
+  optionsContainer: {
+    gap: Layout.spacing.md,
+  },
+  optionButton: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: Colors.dark.background,
+    padding: Layout.spacing.lg,
+    borderRadius: Layout.borderRadius.large,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  selectedOption: {
+    borderColor: Colors.dark.primary,
+    backgroundColor: Colors.dark.primary + '20',
+  },
+  correctOption: {
+    borderColor: Colors.dark.success,
+    backgroundColor: Colors.dark.success + '20',
+  },
+  incorrectOption: {
+    borderColor: Colors.dark.error,
+    backgroundColor: Colors.dark.error + '20',
+  },
+  optionText: {
+    flex: 1,
+    fontFamily: fonts.body,
+    fontSize: fontSizes.md,
+    color: Colors.dark.text,
+  },
+  selectedOptionText: {
+    fontFamily: fonts.bodyBold,
+  },
+  explanationContainer: {
+    marginTop: Layout.spacing.lg,
+    padding: Layout.spacing.lg,
+    borderRadius: Layout.borderRadius.large,
+  },
+  correctExplanation: {
+    backgroundColor: Colors.dark.success + '20',
+  },
+  incorrectExplanation: {
+    backgroundColor: Colors.dark.error + '20',
+  },
+  explanationTitle: {
+    fontFamily: fonts.bodyBold,
+    fontSize: fontSizes.lg,
+    marginBottom: Layout.spacing.sm,
+  },
+  correctText: {
+    color: Colors.dark.success,
+  },
+  incorrectText: {
+    color: Colors.dark.error,
+  },
+  explanationText: {
+    fontFamily: fonts.body,
+    fontSize: fontSizes.md,
+    color: Colors.dark.text,
+    lineHeight: fontSizes.md * 1.5,
+  },
+  nextButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.dark.primary,
+    padding: Layout.spacing.md,
+    borderRadius: Layout.borderRadius.large,
+    marginTop: Layout.spacing.xl,
+  },
+  nextButtonText: {
+    fontFamily: fonts.bodyBold,
+    fontSize: fontSizes.md,
+    color: Colors.dark.text,
+    marginRight: Layout.spacing.xs,
   },
 }); 
