@@ -5,10 +5,7 @@ import { Platform } from 'react-native';
 import { router } from 'expo-router';
 
 // API Configuration
-const DEV_API_URL = 'http://192.168.140.196:8081';
-const PROD_API_URL = 'https://your-production-url.com'; // Замените на ваш production URL
-
-export const BASE_URL = __DEV__ ? DEV_API_URL : PROD_API_URL;
+export const BASE_URL = 'http://10.42.0.201:8081';
 export const API_URL = `${BASE_URL}/api`;
 
 // Create axios instance

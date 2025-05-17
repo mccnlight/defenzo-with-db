@@ -1,7 +1,8 @@
+import { BASE_URL } from '../app/services/api';
+
 // API Configuration
 export const API_CONFIG = {
-  // Change this to your computer's IP address when testing on a physical device
-  BASE_URL: 'http://192.168.140.196:8081',  // Local backend URL
+  BASE_URL,  // Imported from api.ts
 };
 
 // Other configuration constants can be added here 

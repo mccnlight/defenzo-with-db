@@ -24,7 +24,8 @@ import Layout from '@/constants/Layout';
 import { fonts, fontSizes } from '@/constants/Fonts';
 import { Link, useRouter } from 'expo-router';
 import SecurityStats from '@/components/profile/SecurityStats';
-import { getProfile, uploadProfilePicture, logout, User as ApiUser, BASE_URL } from '@/app/services/api';
+import { getProfile, uploadProfilePicture, logout, User as ApiUser } from '@/app/services/api';
+import { API_CONFIG } from '@/constants/Config';
 
 // Security tips that will rotate
 const securityTips = [
@@ -156,7 +157,7 @@ export default function ProfileScreen() {
               >
                 {user?.profile_picture_url ? (
                   <Image
-                    source={{ uri: `${BASE_URL}/${user.profile_picture_url}` }}
+                    source={{ uri: `${API_CONFIG.BASE_URL}/${user.profile_picture_url}` }}
                     style={styles.avatar}
                   />
                 ) : (
