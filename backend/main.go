@@ -59,6 +59,43 @@ func initDB() {
 		log.Fatalf("Failed to create users table: %v", err)
 	}
 	log.Println("Database initialized and users table ready.")
+
+	_, err = db.Exec(`
+	CREATE TABLE IF NOT EXISTS courses (
+		id TEXT PRIMARY KEY,
+		title TEXT NOT NULL,
+		description TEXT,
+		category TEXT,
+		duration TEXT,
+		progress INTEGER,
+		level TEXT,
+		tags TEXT,
+		image TEXT,
+		rating REAL,
+		learners INTEGER,
+		recommended BOOLEAN
+	);
+	`)
+	if err != nil {
+		log.Fatalf("Failed to create courses table: %v", err)
+	}
+
+	_, err = db.Exec(`
+	CREATE TABLE IF NOT EXISTS lessons (
+		id TEXT PRIMARY KEY,
+		course_id TEXT NOT NULL,
+		title TEXT NOT NULL,
+		type TEXT NOT NULL,
+		duration TEXT,
+		content TEXT,
+		order_num INTEGER,
+		completed BOOLEAN DEFAULT 0,
+		FOREIGN KEY(course_id) REFERENCES courses(id)
+	);
+	`)
+	if err != nil {
+		log.Fatalf("Failed to create lessons table: %v", err)
+	}
 }
 
 func migrateDB() {
@@ -128,6 +165,10 @@ func main() {
 
 	// Profile endpoint
 	r.HandleFunc("/api/profile", handleGetProfile).Methods("GET")
+
+	// Courses endpoint
+	r.HandleFunc("/api/courses", handleGetCourses).Methods("GET")
+	r.HandleFunc("/api/courses/{id}", handleGetCourseByID).Methods("GET")
 
 	log.Println("Routes defined")
 
@@ -573,5 +614,108 @@ func handleGetProfile(w http.ResponseWriter, r *http.Request) {
 		"email":               email.String,
 		"full_name":           fullName.String,
 		"profile_picture_url": profilePictureURL.String,
+	})
+}
+
+func handleGetCourses(w http.ResponseWriter, r *http.Request) {
+	rows, err := db.Query("SELECT id, title, description, category, duration, progress, level, tags, image, rating, learners, recommended FROM courses")
+	if err != nil {
+		http.Error(w, `{"error": "Failed to fetch courses"}`, http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	var courses []map[string]interface{}
+	for rows.Next() {
+		var c struct {
+			ID, Title, Description, Category, Duration, Level, Tags, Image string
+			Progress, Learners                                             int
+			Rating                                                         float64
+			Recommended                                                    bool
+		}
+		err := rows.Scan(&c.ID, &c.Title, &c.Description, &c.Category, &c.Duration, &c.Progress, &c.Level, &c.Tags, &c.Image, &c.Rating, &c.Learners, &c.Recommended)
+		if err != nil {
+			continue
+		}
+		courses = append(courses, map[string]interface{}{
+			"id":          c.ID,
+			"title":       c.Title,
+			"description": c.Description,
+			"category":    c.Category,
+			"duration":    c.Duration,
+			"progress":    c.Progress,
+			"level":       c.Level,
+			"tags":        c.Tags,
+			"image":       c.Image,
+			"rating":      c.Rating,
+			"learners":    c.Learners,
+			"recommended": c.Recommended,
+		})
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(courses)
+}
+
+func handleGetCourseByID(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	courseID := vars["id"]
+
+	var course struct {
+		ID, Title, Description, Category, Duration, Level, Tags, Image string
+		Progress, Learners                                             int
+		Rating                                                         float64
+		Recommended                                                    bool
+	}
+	err := db.QueryRow("SELECT id, title, description, category, duration, progress, level, tags, image, rating, learners, recommended FROM courses WHERE id = ?", courseID).
+		Scan(&course.ID, &course.Title, &course.Description, &course.Category, &course.Duration, &course.Progress, &course.Level, &course.Tags, &course.Image, &course.Rating, &course.Learners, &course.Recommended)
+	if err != nil {
+		http.Error(w, `{"error": "Course not found"}`, http.StatusNotFound)
+		return
+	}
+
+	lessonRows, err := db.Query("SELECT id, course_id, title, type, duration, content, order_num, completed FROM lessons WHERE course_id = ? ORDER BY order_num", courseID)
+	if err != nil {
+		http.Error(w, `{"error": "Failed to fetch lessons"}`, http.StatusInternalServerError)
+		return
+	}
+	defer lessonRows.Close()
+
+	lessons := make([]map[string]interface{}, 0) // Always initialize as empty array
+	for lessonRows.Next() {
+		var l struct {
+			ID, CourseID, Title, Type, Duration, Content string
+			OrderNum, Completed                          int
+		}
+		err := lessonRows.Scan(&l.ID, &l.CourseID, &l.Title, &l.Type, &l.Duration, &l.Content, &l.OrderNum, &l.Completed)
+		if err != nil {
+			continue
+		}
+		lessons = append(lessons, map[string]interface{}{
+			"id":        l.ID,
+			"title":     l.Title,
+			"type":      l.Type,
+			"duration":  l.Duration,
+			"content":   json.RawMessage(l.Content),
+			"order_num": l.OrderNum,
+			"completed": l.Completed,
+		})
+	}
+
+	log.Printf("Found %d lessons for course %s", len(lessons), courseID)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"id":          course.ID,
+		"title":       course.Title,
+		"description": course.Description,
+		"category":    course.Category,
+		"duration":    course.Duration,
+		"progress":    course.Progress,
+		"level":       course.Level,
+		"tags":        course.Tags,
+		"image":       course.Image,
+		"rating":      course.Rating,
+		"learners":    course.Learners,
+		"recommended": course.Recommended,
+		"lessons":     lessons, // Always an array
 	})
 }

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { SecurityDetails, SecurityMetrics } from '../types/security';
-import { Course } from '@/app/data/mockCourses';
+import type { Course } from '@/types/course';
 
 // Временные моковые данные для тестирования
 const mockMetrics: SecurityMetrics = {

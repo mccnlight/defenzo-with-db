@@ -7,7 +7,8 @@ import {
   TouchableOpacity,
   Image,
   useWindowDimensions,
-  Modal
+  Modal,
+  ActivityIndicator
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -22,7 +23,6 @@ import {
 import Colors from '@/constants/Colors';
 import Layout from '@/constants/Layout';
 import { fonts, fontSizes } from '@/constants/Fonts';
-import { mockCourses } from '@/app/data/mockCourses';
 import { Course, Lesson } from '@/types/course';
 import DialogLesson from '@/components/lessons/DialogLesson';
 import CardsLesson from '@/components/lessons/CardsLesson';
@@ -35,22 +35,59 @@ export default function CourseScreen() {
   const router = useRouter();
   const { width } = useWindowDimensions();
   const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
-  const { courses, setCourses, updateLessonStatus } = useCourseStore();
-  
-  // Initialize courses on first load
+  const { updateLessonStatus, fetchCourseById } = useCourseStore();
+  const [course, setCourse] = useState<Course | null>(null);
+
   useEffect(() => {
-    if (courses.length === 0) {
-      setCourses(mockCourses);
-    }
-  }, [courses.length, setCourses]);
+    const loadCourse = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        if (typeof id === 'string') {
+          const fetchedCourse = await fetchCourseById(id);
+          if (fetchedCourse) {
+            setCourse(fetchedCourse);
+          } else {
+            setError('Course not found');
+          }
+        }
+      } catch (err) {
+        console.error('Error loading course:', err);
+        setError('Failed to load course');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const course = courses.find((c: Course) => c.id === id);
+    loadCourse();
+  }, [id]);
 
-  if (!course) {
+  if (loading) {
     return (
       <SafeAreaView style={styles.container}>
-        <Text style={styles.errorText}>Course not found</Text>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={Colors.dark.primary} />
+          <Text style={styles.loadingText}>Loading course...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (error || !course) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{error || 'Course not found'}</Text>
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
+            <Text style={styles.backButtonText}>Go Back</Text>
+          </TouchableOpacity>
+        </View>
       </SafeAreaView>
     );
   }
@@ -392,5 +429,29 @@ const styles = StyleSheet.create({
     color: Colors.dark.text,
     textAlign: 'center',
     marginTop: Layout.spacing.xl,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    fontFamily: fonts.body,
+    fontSize: fontSizes.lg,
+    color: Colors.dark.text,
+    marginTop: Layout.spacing.md,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  backButton: {
+    padding: Layout.spacing.md,
+  },
+  backButtonText: {
+    fontFamily: fonts.body,
+    fontSize: fontSizes.md,
+    color: Colors.dark.text,
   },
 }); 

@@ -9,7 +9,6 @@ import { fonts, fontSizes } from '@/constants/Fonts';
 import RecommendedCourseCard from '@/components/home/RecommendedCourseCard';
 import SecurityScoreCard from '@/components/home/SecurityScoreCard';
 import AchievementCard from '@/components/home/AchievementCard';
-import { mockCourses } from '@/app/data/mockCourses';
 import { mockNewsArticles } from '@/data/mockNews';
 import { Link, router, useRouter } from 'expo-router';
 import { getRecommendedCourses, getContinueLearningCourses } from '@/hooks/useSecurityScore';
@@ -87,15 +86,13 @@ export const globalAchievements: Achievement[] = [
 
 export default function HomeScreen() {
   const [isLoading, setIsLoading] = useState(true);
-  const { courses, setCourses } = useCourseStore();
+  const { courses, fetchCourses } = useCourseStore();
   const [user, setUser] = useState<ApiUser | null>(null);
 
   useEffect(() => {
     // Fetch user profile
     getProfile().then(setUser).catch(() => setUser(null));
-    if (courses.length === 0) {
-      setCourses(mockCourses);
-    }
+    fetchCourses();
     const timer = setTimeout(() => {
       setIsLoading(false);
     }, 300);

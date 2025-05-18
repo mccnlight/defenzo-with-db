@@ -5,7 +5,7 @@ import { Clock, Award } from 'lucide-react-native';
 import Colors from '@/constants/Colors';
 import Layout from '@/constants/Layout';
 import { fonts, fontSizes } from '@/constants/Fonts';
-import { Course } from '@/app/data/mockCourses';
+import type { Course } from '@/types/course';
 
 interface CourseCardProps {
   course: Course;

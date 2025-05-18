@@ -27,7 +27,6 @@ import {
 import Colors from '@/constants/Colors';
 import Layout from '@/constants/Layout';
 import { fonts, fontSizes } from '@/constants/Fonts';
-import { mockCourses } from '@/app/data/mockCourses';
 import type { Course } from '@/types/course';
 import { router } from 'expo-router';
 import { useCourseStore } from '@/app/store/courseStore';
@@ -104,7 +103,7 @@ export default function CoursesScreen() {
   const [showFilters, setShowFilters] = useState(false);
   const [filterOptions, setFilterOptions] = useState<FilterOptions>({});
   
-  const { courses } = useCourseStore();
+  const { courses, fetchCourses } = useCourseStore();
   
   const filterCourses = useCallback((coursesToFilter: Course[]) => {
     return coursesToFilter.filter(course => {
@@ -152,6 +151,10 @@ export default function CoursesScreen() {
 
   const filteredCourses = filterCourses(courses);
   
+  React.useEffect(() => {
+    fetchCourses();
+  }, []);
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
