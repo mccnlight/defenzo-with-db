@@ -14,6 +14,7 @@ import { mockNewsArticles } from '@/data/mockNews';
 import { Link, router, useRouter } from 'expo-router';
 import { getRecommendedCourses, getContinueLearningCourses } from '@/hooks/useSecurityScore';
 import { useCourseStore } from '@/app/store/courseStore';
+import { getProfile, User as ApiUser } from '@/app/services/api';
 import NewsCard from '@/components/news/NewsCard';
 
 // Временные моковые данные для демонстрации
@@ -87,9 +88,11 @@ export const globalAchievements: Achievement[] = [
 export default function HomeScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const { courses, setCourses } = useCourseStore();
+  const [user, setUser] = useState<ApiUser | null>(null);
 
-  // Initialize courses on first load
   useEffect(() => {
+    // Fetch user profile
+    getProfile().then(setUser).catch(() => setUser(null));
     if (courses.length === 0) {
       setCourses(mockCourses);
     }
@@ -119,7 +122,7 @@ export default function HomeScreen() {
       params: { selectedNewsId: latestNews.id }
     });
   };
-  
+
   return (
     <SafeAreaView style={styles.container} edges={['top', 'right', 'left']}>
       <ScrollView 
@@ -129,7 +132,7 @@ export default function HomeScreen() {
         <View style={styles.header}>
           <View>
             <Text style={styles.welcomeText}>Welcome back,</Text>
-            <Text style={styles.nameText}>Alex</Text>
+            <Text style={styles.nameText}>{user?.full_name || 'User'}</Text>
           </View>
         </View>
         
