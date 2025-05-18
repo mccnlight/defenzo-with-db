@@ -3,9 +3,10 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingVi
 import Colors from '../../constants/Colors';
 import { fonts, fontSizes } from '../../constants/Fonts';
 import { login, register, LoginCredentials, RegisterCredentials } from '../services/api';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRouter } from 'expo-router';
 
-export default function LoginScreen({ onAuthSuccess }: { onAuthSuccess?: () => void }) {
+export default function LoginScreen() {
+  const router = useRouter();
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -20,26 +21,21 @@ export default function LoginScreen({ onAuthSuccess }: { onAuthSuccess?: () => v
 
       if (!email || !password || (!isLogin && !fullName)) {
         setError('Please fill in all fields.');
+        setLoading(false);
         return;
       }
 
       if (isLogin) {
-        const credentials: LoginCredentials = { email, password };
-        await login(credentials);
+        await login({ email, password });
       } else {
-        const credentials: RegisterCredentials = { email, password, full_name: fullName };
-        await register(credentials);
-        // After registration, log in the user
-        const loginResponse = await login({ email, password });
-        if (loginResponse) {
-          await AsyncStorage.setItem('token', loginResponse);
-        }
+        await register({ email, password, full_name: fullName });
+        await login({ email, password });
       }
 
-      if (onAuthSuccess) onAuthSuccess();
+      // Redirect to main page after successful login
+      router.replace('/(tabs)');
     } catch (err: any) {
-      console.error('Auth error:', err);
-      setError(err.response?.data?.error || 'An error occurred. Please try again.');
+      setError(err.response?.data?.error || err.message || 'An error occurred. Please try again.');
     } finally {
       setLoading(false);
     }

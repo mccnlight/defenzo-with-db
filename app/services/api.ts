@@ -1,11 +1,8 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
-import { Platform } from 'react-native';
-import { router } from 'expo-router';
 
-// API Configuration
-export const BASE_URL = 'http://10.42.0.201:8081';
+export const BASE_URL = 'http://192.168.0.11:8081';
 export const API_URL = `${BASE_URL}/api`;
 
 // Create axios instance
@@ -13,57 +10,18 @@ const api = axios.create({
   baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
-    'Accept': 'application/json',
   },
-  timeout: 15000, // 15 seconds timeout
 });
 
 // Add token to requests
-api.interceptors.request.use(
-  async (config) => {
-    try {
-      const token = await AsyncStorage.getItem('token');
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-      return config;
-    } catch (error) {
-      console.error('Error adding token to request:', error);
-      return config;
-    }
-  },
-  (error) => {
-    return Promise.reject(error);
+api.interceptors.request.use(async (config) => {
+  const token = await AsyncStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
   }
-);
+  return config;
+});
 
-// Add response interceptor for error handling
-api.interceptors.response.use(
-  (response) => response,
-  async (error) => {
-    if (error.response?.status === 401) {
-      // Unauthorized - clear token and redirect to login
-      await AsyncStorage.removeItem('token');
-      router.replace('/');
-    }
-
-    // Network or timeout error
-    if (!error.response || error.code === 'ECONNABORTED') {
-      console.error('Network or timeout error:', error);
-      throw new Error('Ошибка сети. Пожалуйста, проверьте подключение и попробуйте снова.');
-    }
-
-    // Server error
-    if (error.response?.status >= 500) {
-      console.error('Server error:', error);
-      throw new Error('Ошибка сервера. Пожалуйста, попробуйте позже.');
-    }
-
-    return Promise.reject(error);
-  }
-);
-
-// Auth types
 export interface LoginCredentials {
   email: string;
   password: string;
@@ -80,7 +38,6 @@ export interface User {
   profile_picture_url: string | null;
 }
 
-// Auth functions
 export const login = async (credentials: LoginCredentials) => {
   const response = await api.post('/login', credentials);
   const { token } = response.data;

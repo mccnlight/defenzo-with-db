@@ -24,7 +24,7 @@ import Layout from '@/constants/Layout';
 import { fonts, fontSizes } from '@/constants/Fonts';
 import { Link, useRouter } from 'expo-router';
 import SecurityStats from '@/components/profile/SecurityStats';
-import { getProfile, uploadProfilePicture, logout, User as ApiUser } from '@/app/services/api';
+import { getProfile, uploadProfilePicture, logout, User as ApiUser, API_URL } from '@/app/services/api';
 import { API_CONFIG } from '@/constants/Config';
 
 // Security tips that will rotate
@@ -108,7 +108,7 @@ export default function ProfileScreen() {
   const handleLogout = async () => {
     try {
       await logout();
-      router.replace('/');
+      router.replace('/auth/LoginScreen');
     } catch (error) {
       Alert.alert('Error', 'Failed to logout');
     }
@@ -125,6 +125,14 @@ export default function ProfileScreen() {
   }
 
   const currentTip = securityTips[currentTipIndex];
+
+  // Use API_URL to get the base (strip /api if present)
+  const apiBase = API_URL.replace(/\/api$/, '');
+  const imageUrl = user?.profile_picture_url
+    ? user.profile_picture_url.startsWith('http')
+      ? user.profile_picture_url
+      : `${apiBase}/${user.profile_picture_url.replace(/^\/?uploads\//, 'uploads/')}`
+    : null;
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -155,9 +163,9 @@ export default function ProfileScreen() {
                 onPress={handleUploadPicture}
                 disabled={uploading}
               >
-                {user?.profile_picture_url ? (
+                {imageUrl ? (
                   <Image
-                    source={{ uri: `${API_CONFIG.BASE_URL}/${user.profile_picture_url}` }}
+                    source={{ uri: imageUrl }}
                     style={styles.avatar}
                   />
                 ) : (

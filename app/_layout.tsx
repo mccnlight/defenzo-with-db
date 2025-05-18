@@ -1,7 +1,6 @@
 import React, { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useColorScheme, View, StyleSheet } from 'react-native';
 import { 
   useFonts, 
   Inter_400Regular, 
@@ -12,14 +11,14 @@ import {
   PlusJakartaSans_700Bold 
 } from '@expo-google-fonts/plus-jakarta-sans';
 import { SplashScreen } from 'expo-router';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Colors from '@/constants/Colors';
+import { StyleSheet } from 'react-native';
 
 // Prevent splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  const [fontsLoaded] = useFonts({
+  const [fontsLoaded, fontError] = useFonts({
     Inter_400Regular,
     Inter_500Medium,
     Inter_700Bold,
@@ -27,41 +26,36 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
-    if (fontsLoaded) {
-      // Hide splash screen once fonts are loaded
+    if (fontsLoaded || fontError) {
       SplashScreen.hideAsync();
     }
-  }, [fontsLoaded]);
+  }, [fontsLoaded, fontError]);
 
-  if (!fontsLoaded) {
-    return null; // This will keep the splash screen visible until fonts are loaded
+  if (!fontsLoaded && !fontError) {
+    return null;
   }
 
-  return <RootLayoutNav />;
-}
-
-function RootLayoutNav() {
   return (
-    <GestureHandlerRootView style={styles.container}>
-      <StatusBar style="light" />
-      <Stack screenOptions={{ headerShown: false }}>
+    <>
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          contentStyle: { backgroundColor: Colors.dark.background },
+        }}
+      >
+        <Stack.Screen name="index" />
+        <Stack.Screen name="auth/LoginScreen" />
         <Stack.Screen name="(tabs)" />
-        <Stack.Screen 
-          name="(screens)/badges" 
-          options={{ 
-            headerShown: false,
-            presentation: 'modal',
-            animation: 'slide_from_bottom'
-          }} 
-        />
         <Stack.Screen name="+not-found" />
       </Stack>
-    </GestureHandlerRootView>
+      <StatusBar style="light" />
+    </>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: Colors.dark.background,
   },
 });
