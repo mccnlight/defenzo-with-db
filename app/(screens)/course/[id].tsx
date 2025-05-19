@@ -8,7 +8,8 @@ import {
   Image,
   useWindowDimensions,
   Modal,
-  ActivityIndicator
+  ActivityIndicator,
+  Animated
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -38,8 +39,10 @@ export default function CourseScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  const { updateLessonStatus, fetchCourseById } = useCourseStore();
+  const { updateLessonStatus, fetchCourseById, fetchUserProgress, userProgress } = useCourseStore();
   const [course, setCourse] = useState<Course | null>(null);
+
+  const progressValue = course ? Math.max(0, Math.min(100, course.progress)) : 0;
 
   useEffect(() => {
     const loadCourse = async () => {
@@ -47,9 +50,20 @@ export default function CourseScreen() {
         setLoading(true);
         setError(null);
         if (typeof id === 'string') {
+          await fetchUserProgress();
           const fetchedCourse = await fetchCourseById(id);
           if (fetchedCourse) {
-            setCourse(fetchedCourse);
+            // Patch lesson completion from userProgress
+            const patchedLessons = fetchedCourse.lessons.map((lesson) => {
+              const progress = userProgress.find(
+                (p) => p.course_id === fetchedCourse.id && p.lesson_id === lesson.id
+              );
+              return { ...lesson, completed: !!progress?.completed };
+            });
+            const totalLessons = patchedLessons.length;
+            const completedLessons = patchedLessons.filter(l => l.completed).length;
+            const progressValue = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
+            setCourse({ ...fetchedCourse, lessons: patchedLessons, progress: progressValue });
           } else {
             setError('Course not found');
           }
@@ -63,7 +77,8 @@ export default function CourseScreen() {
     };
 
     loadCourse();
-  }, [id]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, Array.isArray(userProgress) ? userProgress.length : 0]);
 
   if (loading) {
     return (
@@ -93,10 +108,7 @@ export default function CourseScreen() {
   }
 
   const handleBack = () => {
-    if (selectedLesson) {
-      setSelectedLesson(null);
-      return;
-    }
+    setSelectedLesson(null);
     router.back();
   };
 
@@ -230,14 +242,14 @@ export default function CourseScreen() {
 
             <View style={styles.progressContainer}>
               <View style={styles.progressBar}>
-                <View 
+                <Animated.View 
                   style={[
                     styles.progressFill,
-                    { width: `${course.progress}%` }
+                    { width: `${progressValue}%` }
                   ]} 
                 />
               </View>
-              <Text style={styles.progressText}>{course.progress}% Complete</Text>
+              <Text style={styles.progressText}>{progressValue}% Complete</Text>
             </View>
 
             <View style={styles.tags}>

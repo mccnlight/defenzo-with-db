@@ -2,7 +2,7 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 
-export const BASE_URL = 'http://192.168.0.11:8081';
+export const BASE_URL = 'http://10.202.15.93:8081';
 export const API_URL = `${BASE_URL}/api`;
 
 // Create axios instance

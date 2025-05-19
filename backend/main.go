@@ -96,6 +96,22 @@ func initDB() {
 	if err != nil {
 		log.Fatalf("Failed to create lessons table: %v", err)
 	}
+
+	_, err = db.Exec(`
+	CREATE TABLE IF NOT EXISTS user_course_progress (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		user_id INTEGER NOT NULL,
+		course_id TEXT NOT NULL,
+		lesson_id TEXT,
+		completed BOOLEAN NOT NULL DEFAULT 0,
+		progress INTEGER NOT NULL DEFAULT 0,
+		last_accessed DATETIME,
+		UNIQUE(user_id, course_id, lesson_id)
+	);
+	`)
+	if err != nil {
+		log.Fatalf("Failed to create user_course_progress table: %v", err)
+	}
 }
 
 func migrateDB() {
@@ -169,6 +185,10 @@ func main() {
 	// Courses endpoint
 	r.HandleFunc("/api/courses", handleGetCourses).Methods("GET")
 	r.HandleFunc("/api/courses/{id}", handleGetCourseByID).Methods("GET")
+
+	// User progress endpoints
+	r.HandleFunc("/api/user/progress", handleGetUserProgress).Methods("GET")
+	r.HandleFunc("/api/user/progress", handleUpdateUserProgress).Methods("POST")
 
 	log.Println("Routes defined")
 
@@ -637,6 +657,49 @@ func handleGetCourses(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			continue
 		}
+
+		// Fetch lessons for this course
+		lessonRows, err := db.Query("SELECT id, course_id, title, type, duration, content, order_num, completed FROM lessons WHERE course_id = ? ORDER BY order_num", c.ID)
+		if err != nil {
+			courses = append(courses, map[string]interface{}{
+				"id":          c.ID,
+				"title":       c.Title,
+				"description": c.Description,
+				"category":    c.Category,
+				"duration":    c.Duration,
+				"progress":    c.Progress,
+				"level":       c.Level,
+				"tags":        c.Tags,
+				"image":       c.Image,
+				"rating":      c.Rating,
+				"learners":    c.Learners,
+				"recommended": c.Recommended,
+				"lessons":     []map[string]interface{}{}, // fallback to empty lessons
+			})
+			continue
+		}
+		lessons := make([]map[string]interface{}, 0)
+		for lessonRows.Next() {
+			var l struct {
+				ID, CourseID, Title, Type, Duration, Content string
+				OrderNum, Completed                          int
+			}
+			err := lessonRows.Scan(&l.ID, &l.CourseID, &l.Title, &l.Type, &l.Duration, &l.Content, &l.OrderNum, &l.Completed)
+			if err != nil {
+				continue
+			}
+			lessons = append(lessons, map[string]interface{}{
+				"id":        l.ID,
+				"title":     l.Title,
+				"type":      l.Type,
+				"duration":  l.Duration,
+				"content":   json.RawMessage(l.Content),
+				"order_num": l.OrderNum,
+				"completed": l.Completed,
+			})
+		}
+		lessonRows.Close()
+
 		courses = append(courses, map[string]interface{}{
 			"id":          c.ID,
 			"title":       c.Title,
@@ -650,6 +713,7 @@ func handleGetCourses(w http.ResponseWriter, r *http.Request) {
 			"rating":      c.Rating,
 			"learners":    c.Learners,
 			"recommended": c.Recommended,
+			"lessons":     lessons,
 		})
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -718,4 +782,62 @@ func handleGetCourseByID(w http.ResponseWriter, r *http.Request) {
 		"recommended": course.Recommended,
 		"lessons":     lessons, // Always an array
 	})
+}
+
+// Handler to get user progress
+func handleGetUserProgress(w http.ResponseWriter, r *http.Request) {
+	userID := r.URL.Query().Get("user_id")
+	if userID == "" {
+		http.Error(w, `{"error": "user_id required"}`, http.StatusBadRequest)
+		return
+	}
+	rows, err := db.Query("SELECT course_id, lesson_id, completed, progress, last_accessed FROM user_course_progress WHERE user_id = ?", userID)
+	if err != nil {
+		http.Error(w, `{"error": "Failed to fetch progress"}`, http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+	var progress []map[string]interface{}
+	for rows.Next() {
+		var courseID, lessonID sql.NullString
+		var completed bool
+		var prog int
+		var lastAccessed sql.NullString
+		err := rows.Scan(&courseID, &lessonID, &completed, &prog, &lastAccessed)
+		if err != nil {
+			continue
+		}
+		progress = append(progress, map[string]interface{}{
+			"course_id":     courseID.String,
+			"lesson_id":     lessonID.String,
+			"completed":     completed,
+			"progress":      prog,
+			"last_accessed": lastAccessed.String,
+		})
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(progress)
+}
+
+// Handler to update user progress
+func handleUpdateUserProgress(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		UserID    int    `json:"user_id"`
+		CourseID  string `json:"course_id"`
+		LessonID  string `json:"lesson_id"`
+		Completed bool   `json:"completed"`
+		Progress  int    `json:"progress"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, `{"error": "Invalid request body"}`, http.StatusBadRequest)
+		return
+	}
+	_, err := db.Exec(`INSERT OR REPLACE INTO user_course_progress (user_id, course_id, lesson_id, completed, progress, last_accessed) VALUES (?, ?, ?, ?, ?, datetime('now'))`,
+		req.UserID, req.CourseID, req.LessonID, req.Completed, req.Progress)
+	if err != nil {
+		http.Error(w, `{"error": "Failed to update progress"}`, http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"success": true}`))
 }

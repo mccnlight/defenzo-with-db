@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { 
   View, 
   Text, 
@@ -49,6 +49,17 @@ interface CourseCardProps {
 }
 
 const CourseCard = ({ course }: CourseCardProps) => {
+  const { userProgress } = useCourseStore();
+  // Patch lesson completion from userProgress
+  const patchedLessons = (course.lessons || []).map((lesson) => {
+    const progress = userProgress.find(
+      (p) => p.course_id === course.id && p.lesson_id === lesson.id
+    );
+    return { ...lesson, completed: !!progress?.completed };
+  });
+  const totalLessons = patchedLessons.length;
+  const completedLessons = patchedLessons.filter(l => l.completed).length;
+  const progressValue = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
   return (
     <TouchableOpacity 
       style={styles.courseCard}
@@ -85,11 +96,11 @@ const CourseCard = ({ course }: CourseCardProps) => {
             <View 
               style={[
                 styles.progressBar, 
-                { width: `${course.progress || 0}%` }
+                { width: `${progressValue}%` }
               ]} 
             />
           </View>
-          <Text style={styles.progressText}>{course.progress || 0}% Complete</Text>
+          <Text style={styles.progressText}>{progressValue}% Complete</Text>
         </View>
       </View>
     </TouchableOpacity>
@@ -103,7 +114,7 @@ export default function CoursesScreen() {
   const [showFilters, setShowFilters] = useState(false);
   const [filterOptions, setFilterOptions] = useState<FilterOptions>({});
   
-  const { courses, fetchCourses } = useCourseStore();
+  const { courses, fetchCourses, fetchUserProgress } = useCourseStore();
   
   const filterCourses = useCallback((coursesToFilter: Course[]) => {
     return coursesToFilter.filter(course => {
@@ -151,8 +162,9 @@ export default function CoursesScreen() {
 
   const filteredCourses = filterCourses(courses);
   
-  React.useEffect(() => {
+  useEffect(() => {
     fetchCourses();
+    fetchUserProgress();
   }, []);
 
   return (
