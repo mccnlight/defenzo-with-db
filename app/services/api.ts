@@ -2,6 +2,11 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 
+// IMPORTANT: Change this IP address to your local machine's IP address
+// To find your IP address:
+// - On Windows: Run 'ipconfig' in Command Prompt
+// - On macOS/Linux: Run 'ifconfig' or 'ip addr' in Terminal
+// Make sure your mobile device and development machine are on the same network
 export const BASE_URL = 'http://10.202.15.93:8081';
 export const API_URL = `${BASE_URL}/api`;
 

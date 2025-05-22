@@ -50,7 +50,16 @@ cp .env.example .env
 # Edit .env with your configuration
 ```
 
-5. Start the development servers:
+5. Configure API URL:
+   - Open `app/services/api.ts`
+   - Find the `BASE_URL` constant
+   - Replace the IP address with your local machine's IP address
+   - To find your IP address:
+     - On Windows: Run `ipconfig` in Command Prompt
+     - On macOS/Linux: Run `ifconfig` or `ip addr` in Terminal
+   - Make sure your mobile device and development machine are on the same network
+
+6. Start the development servers:
 
 Frontend:
 ```bash
