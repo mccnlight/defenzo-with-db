@@ -1,13 +1,14 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
+import { Platform } from 'react-native';
 
 // IMPORTANT: Change this IP address to your local machine's IP address
 // To find your IP address:
 // - On Windows: Run 'ipconfig' in Command Prompt
 // - On macOS/Linux: Run 'ifconfig' or 'ip addr' in Terminal
 // Make sure your mobile device and development machine are on the same network
-export const BASE_URL = 'http://10.202.15.93:8081';
+export const BASE_URL = 'http://10.201.6.223:8081';
 export const API_URL = `${BASE_URL}/api`;
 
 // Create axios instance
@@ -61,40 +62,69 @@ export const logout = async () => {
 
 // Profile functions
 export const uploadProfilePicture = async () => {
-  // Request permission
-  const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-  if (status !== 'granted') {
-    throw new Error('Permission to access media library was denied');
+  try {
+    // Request permission
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      throw new Error('Permission to access media library was denied');
+    }
+
+    // Pick image
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+
+    if (result.canceled) {
+      throw new Error('Image picking was canceled');
+    }
+
+    console.log('Selected image:', result.assets[0]);
+
+    // Create form data
+    const formData = new FormData();
+    const imageUri = result.assets[0].uri;
+    const filename = imageUri.split('/').pop() || 'profile.jpg';
+    const match = /\.(\w+)$/.exec(filename);
+    const type = match ? `image/${match[1]}` : 'image/jpeg';
+
+    // Handle file differently for web
+    if (Platform.OS === 'web') {
+      // For web, we need to fetch the file and create a Blob
+      const response = await fetch(imageUri);
+      const blob = await response.blob();
+      formData.append('profile_picture', blob, filename);
+    } else {
+      // For mobile, use the existing approach
+      formData.append('profile_picture', {
+        uri: imageUri,
+        type: type,
+        name: filename,
+      } as any);
+    }
+
+    console.log('FormData created, attempting upload...');
+    
+    // Upload image
+    const response = await api.post('/profile/picture', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+
+    console.log('Upload response:', response.data);
+    return response.data.profile_picture_url;
+  } catch (error: any) {
+    console.error('Profile picture upload error:', error);
+    console.error('Error details:', {
+      message: error.message,
+      response: error.response?.data,
+      status: error.response?.status,
+    });
+    throw error;
   }
-
-  // Pick image
-  const result = await ImagePicker.launchImageLibraryAsync({
-    mediaTypes: ImagePicker.MediaTypeOptions.Images,
-    allowsEditing: true,
-    aspect: [1, 1],
-    quality: 0.8,
-  });
-
-  if (result.canceled) {
-    throw new Error('Image picking was canceled');
-  }
-
-  // Create form data
-  const formData = new FormData();
-  formData.append('profile_picture', {
-    uri: result.assets[0].uri,
-    type: 'image/jpeg',
-    name: 'profile.jpg',
-  } as any);
-
-  // Upload image
-  const response = await api.post('/profile/picture', formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
-  });
-
-  return response.data.profile_picture_url;
 };
 
 export const updateProfile = async (data: { full_name?: string }) => {

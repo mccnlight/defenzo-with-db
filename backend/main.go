@@ -160,6 +160,7 @@ func main() {
 	// Serve static files from uploads directory
 	fs := http.FileServer(http.Dir("uploads"))
 	r.PathPrefix("/uploads/").Handler(http.StripPrefix("/uploads/", fs))
+	log.Println("Static file server configured for /uploads/")
 
 	// Define routes
 	r.HandleFunc("/api/scan", func(w http.ResponseWriter, r *http.Request) {
@@ -519,18 +520,21 @@ func handleProfilePictureUpload(w http.ResponseWriter, r *http.Request) {
 		return jwtSecret, nil
 	})
 	if err != nil {
+		log.Printf("Token validation error: %v", err)
 		http.Error(w, `{"error": "Invalid token"}`, http.StatusUnauthorized)
 		return
 	}
 
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
+		log.Printf("Invalid token claims")
 		http.Error(w, `{"error": "Invalid token claims"}`, http.StatusUnauthorized)
 		return
 	}
 
 	userID, ok := claims["user_id"].(float64)
 	if !ok {
+		log.Printf("Invalid user ID in token")
 		http.Error(w, `{"error": "Invalid user ID in token"}`, http.StatusUnauthorized)
 		return
 	}
@@ -538,12 +542,14 @@ func handleProfilePictureUpload(w http.ResponseWriter, r *http.Request) {
 	// Parse multipart form
 	err = r.ParseMultipartForm(10 << 20) // 10 MB max
 	if err != nil {
+		log.Printf("Failed to parse form: %v", err)
 		http.Error(w, `{"error": "Failed to parse form"}`, http.StatusBadRequest)
 		return
 	}
 
 	file, handler, err := r.FormFile("profile_picture")
 	if err != nil {
+		log.Printf("Failed to get file: %v", err)
 		http.Error(w, `{"error": "Failed to get file"}`, http.StatusBadRequest)
 		return
 	}
@@ -586,6 +592,8 @@ func handleProfilePictureUpload(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, `{"error": "Failed to update profile picture URL"}`, http.StatusInternalServerError)
 		return
 	}
+
+	log.Printf("Profile picture uploaded successfully: %s", relativePath)
 
 	// Return success response with the URL
 	w.Header().Set("Content-Type", "application/json")
