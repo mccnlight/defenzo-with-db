@@ -55,7 +55,7 @@ export default function CourseScreen() {
           if (fetchedCourse) {
             // Patch lesson completion from userProgress
             const patchedLessons = fetchedCourse.lessons.map((lesson) => {
-              const progress = userProgress.find(
+              const progress = (userProgress ?? []).find(
                 (p) => p.course_id === fetchedCourse.id && p.lesson_id === lesson.id
               );
               return { ...lesson, completed: !!progress?.completed };
@@ -118,6 +118,11 @@ export default function CourseScreen() {
 
   const handleLessonComplete = () => {
     if (!selectedLesson) return;
+    console.log('Lesson completed:', {
+      courseId: course.id,
+      lessonId: selectedLesson.id,
+      lessonTitle: selectedLesson.title
+    });
     updateLessonStatus(course.id, selectedLesson.id, true);
     setSelectedLesson(null);
   };

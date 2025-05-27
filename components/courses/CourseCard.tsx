@@ -21,6 +21,9 @@ export default function CourseCard({ course }: CourseCardProps) {
     });
   };
 
+  // Use the progress value directly from the course object provided by the backend
+  const progressValue = course.progress;
+
   return (
     <TouchableOpacity style={styles.container} onPress={handlePress}>
       {course.image ? (
@@ -52,11 +55,11 @@ export default function CourseCard({ course }: CourseCardProps) {
               <View 
                 style={[
                   styles.progressFill,
-                  { width: `${course.progress}%` }
+                  { width: `${progressValue}%` }
                 ]} 
               />
             </View>
-            <Text style={styles.progressText}>{course.progress}% Complete</Text>
+            <Text style={styles.progressText}>{progressValue}% Complete</Text>
           </View>
 
           <View style={styles.tags}>
@@ -156,6 +159,7 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bodyMedium,
     fontSize: fontSizes.xs,
     color: Colors.dark.text,
+    opacity: 0.7,
   },
   tags: {
     flexDirection: 'row',

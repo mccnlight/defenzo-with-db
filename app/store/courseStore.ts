@@ -3,6 +3,7 @@ import type { Course } from '@/types/course';
 import axios from 'axios';
 import { BASE_URL } from '@/app/services/api';
 import { getProfile } from '@/app/services/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface UserProgress {
   course_id: string;
@@ -30,7 +31,12 @@ export const useCourseStore = create<CourseStore>((set, get) => ({
   setCourses: (courses: Course[]) => set({ courses }),
   fetchCourses: async () => {
     try {
-      const res = await axios.get(`${BASE_URL}/api/courses`);
+      const token = await AsyncStorage.getItem('token');
+      const res = await axios.get(`${BASE_URL}/api/courses`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
       const courses = res.data.map((c: any) => ({
         ...c,
         tags: typeof c.tags === 'string' ? JSON.parse(c.tags) : c.tags,
@@ -42,9 +48,14 @@ export const useCourseStore = create<CourseStore>((set, get) => ({
   },
   fetchCourseById: async (id: string) => {
     try {
+      const token = await AsyncStorage.getItem('token');
       const url = `${BASE_URL}/api/courses/${id}`;
       console.log('Fetching course:', url);
-      const res = await axios.get(url);
+      const res = await axios.get(url, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
       const course = res.data;
       console.log('Course response:', course);
       if (!course || !Array.isArray(course.lessons)) {
@@ -65,8 +76,12 @@ export const useCourseStore = create<CourseStore>((set, get) => ({
   },
   fetchUserProgress: async () => {
     try {
-      const user = await getProfile();
-      const res = await axios.get(`${BASE_URL}/api/user/progress?user_id=${user.id}`);
+      const token = await AsyncStorage.getItem('token');
+      const res = await axios.get(`${BASE_URL}/api/user/progress`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
       set({ userProgress: res.data });
     } catch (err) {
       console.error('Failed to fetch user progress', err);
@@ -74,18 +89,24 @@ export const useCourseStore = create<CourseStore>((set, get) => ({
   },
   updateUserProgress: async (courseId, lessonId, completed, progress) => {
     try {
-      const user = await getProfile();
+      const token = await AsyncStorage.getItem('token');
+      console.log('Updating progress:', { courseId, lessonId, completed, progress });
       await axios.post(`${BASE_URL}/api/user/progress`, {
-        user_id: user.id,
         course_id: courseId,
         lesson_id: lessonId,
         completed,
         progress,
+      }, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
       });
       // Optionally, re-fetch progress
       get().fetchUserProgress();
+      // Also re-fetch courses to update progress bars
+      get().fetchCourses();
     } catch (err) {
-      console.error('Failed to update user progress', err);
+      console.error('Failed to update user progress:', err);
     }
   },
   updateCourseProgress: (courseId: string, progress: number) =>
@@ -110,7 +131,6 @@ export const useCourseStore = create<CourseStore>((set, get) => ({
         return {
           ...course,
           lessons,
-          progress,
         };
       });
       return { courses: updatedCourses };

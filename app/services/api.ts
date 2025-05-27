@@ -8,7 +8,7 @@ import { Platform } from 'react-native';
 // - On Windows: Run 'ipconfig' in Command Prompt
 // - On macOS/Linux: Run 'ifconfig' or 'ip addr' in Terminal
 // Make sure your mobile device and development machine are on the same network
-export const BASE_URL = 'http://10.201.6.223:8081';
+export const BASE_URL = 'http://10.42.0.201:8081';
 export const API_URL = `${BASE_URL}/api`;
 
 // Create axios instance
