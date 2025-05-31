@@ -96,8 +96,11 @@ export default function ProfileScreen() {
     try {
       setUploading(true);
       const profilePictureUrl = await uploadProfilePicture();
-      setUser((prev: ApiUser | null) => prev ? { ...prev, profile_picture_url: profilePictureUrl } : null);
-      Alert.alert('Success', 'Profile picture updated');
+      // Only update if we got a new URL (not cancelled)
+      if (profilePictureUrl) {
+        setUser((prev: ApiUser | null) => prev ? { ...prev, profile_picture_url: profilePictureUrl } : null);
+        Alert.alert('Success', 'Profile picture updated');
+      }
     } catch (error: any) {
       Alert.alert('Error', error.message || 'Failed to upload profile picture');
     } finally {

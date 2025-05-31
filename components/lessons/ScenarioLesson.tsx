@@ -52,7 +52,7 @@ export default function ScenarioLesson({ scenarios, onComplete }: ScenarioLesson
       <View style={styles.scenarioContainer}>
         <View style={styles.header}>
           <AlertTriangle color={Colors.dark.warning} size={24} />
-          <Text style={styles.headerText}>Сценарий {currentScenarioIndex + 1}</Text>
+          <Text style={styles.headerText}>Scenario {currentScenarioIndex + 1}</Text>
         </View>
 
         <View style={styles.situationContainer}>
@@ -60,7 +60,7 @@ export default function ScenarioLesson({ scenarios, onComplete }: ScenarioLesson
           <Text style={styles.situationText}>{currentScenario.situation}</Text>
         </View>
 
-        <Text style={styles.questionText}>Что вы будете делать?</Text>
+        <Text style={styles.questionText}>What would you do?</Text>
 
         <View style={styles.optionsContainer}>
           {currentScenario.options.map((option, index) => (
@@ -95,7 +95,7 @@ export default function ScenarioLesson({ scenarios, onComplete }: ScenarioLesson
               styles.explanationTitle,
               isCorrectOption ? styles.correctText : styles.incorrectText
             ]}>
-              {isCorrectOption ? 'Правильное решение!' : 'Неправильное решение'}
+              {isCorrectOption ? 'Correct solution!' : 'Incorrect solution'}
             </Text>
             <Text style={styles.explanationText}>
               {currentScenario.explanation}
@@ -109,7 +109,7 @@ export default function ScenarioLesson({ scenarios, onComplete }: ScenarioLesson
             onPress={handleNext}
           >
             <Text style={styles.nextButtonText}>
-              {isLastScenario ? 'Завершить' : 'Следующий сценарий'}
+              {isLastScenario ? 'Complete' : 'Next Scenario'}
             </Text>
             <ChevronRight color={Colors.dark.text} size={20} />
           </TouchableOpacity>
@@ -126,7 +126,7 @@ export default function ScenarioLesson({ scenarios, onComplete }: ScenarioLesson
           />
         </View>
         <Text style={styles.progressText}>
-          {currentScenarioIndex + 1} из {scenarios.length}
+          {currentScenarioIndex + 1} of {scenarios.length}
         </Text>
       </View>
     </ScrollView>

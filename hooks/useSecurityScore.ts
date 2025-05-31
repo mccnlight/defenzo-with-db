@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { SecurityDetails, SecurityMetrics } from '../types/security';
 import type { Course } from '@/types/course';
+import type { UserProgress } from '@/types/userProgress';
 
-// Временные моковые данные для тестирования
+// Temporary mock data for testing
 const mockMetrics: SecurityMetrics = {
   coursesCompleted: 3,
   totalCourses: 5,
@@ -18,18 +19,18 @@ function calculateSecurityScore(metrics: SecurityMetrics): SecurityDetails {
     practicalTasks: 0.2
   };
 
-  // Расчет по курсам
+  // Course calculation
   const courseScore = (metrics.coursesCompleted / metrics.totalCourses) * 100;
   
-  // Расчет по тестам
+  // Test calculation
   const averageQuizScore = metrics.quizScores.length > 0
     ? metrics.quizScores.reduce((a, b) => a + b, 0) / metrics.quizScores.length
     : 0;
   
-  // Расчет по практическим заданиям
+  // Practical assignments calculation
   const practicalScore = (metrics.practicalTasksCompleted / metrics.totalPracticalTasks) * 100;
 
-  // Итоговый расчет
+  // Final calculation
   const overallScore = Math.round(
     courseScore * weights.courses +
     averageQuizScore * weights.quizzes +
@@ -46,14 +47,14 @@ function calculateSecurityScore(metrics: SecurityMetrics): SecurityDetails {
   };
 }
 
-// Добавляем интерфейс для расширенных метрик пользователя
+// Add interface for extended user metrics
 export interface UserLearningMetrics extends SecurityMetrics {
   lastAccessedCourses: { [courseId: string]: Date };
   completedCategories: string[];
   preferredCategories: string[];
 }
 
-// Функция для определения рекомендованных курсов
+// Function to determine recommended courses
 export function getRecommendedCourses(
   courses: Course[],
   metrics: UserLearningMetrics
@@ -74,29 +75,37 @@ export function getRecommendedCourses(
     .slice(0, 3);
 }
 
-// Функция для определения курсов для продолжения обучения
+// Function to determine courses for continued learning
 export function getContinueLearningCourses(
   courses: Course[],
-  metrics: UserLearningMetrics
+  userProgress: UserProgress[]
 ): Course[] {
+  if (!userProgress || userProgress.length === 0) {
+    return [];
+  }
+
+  // Filter courses that have any progress
   return courses
-    .filter(course => course.progress > 0 && course.progress < 100)
+    .filter(course => {
+      const courseProgress = userProgress.find(p => p.course_id === course.id);
+      return courseProgress && courseProgress.progress > 0 && courseProgress.progress < 100;
+    })
     .sort((a, b) => {
-      // Base score based on progress
-      const aProgress = a.progress / 100;
-      const bProgress = b.progress / 100;
+      // Get progress for each course
+      const aProgress = userProgress.find(p => p.course_id === a.id)?.progress || 0;
+      const bProgress = userProgress.find(p => p.course_id === b.id)?.progress || 0;
       
-      // Consider last access time
-      const aLastAccess = metrics.lastAccessedCourses[a.id] 
-        ? new Date(metrics.lastAccessedCourses[a.id]).getTime()
+      // Get last access time for each course
+      const aLastAccess = userProgress.find(p => p.course_id === a.id)?.last_accessed 
+        ? new Date(userProgress.find(p => p.course_id === a.id)!.last_accessed).getTime()
         : 0;
-      const bLastAccess = metrics.lastAccessedCourses[b.id]
-        ? new Date(metrics.lastAccessedCourses[b.id]).getTime()
+      const bLastAccess = userProgress.find(p => p.course_id === b.id)?.last_accessed
+        ? new Date(userProgress.find(p => p.course_id === b.id)!.last_accessed).getTime()
         : 0;
       
-      // Combined score
-      const aScore = aProgress * 0.7 + (aLastAccess / Date.now()) * 0.3;
-      const bScore = bProgress * 0.7 + (bLastAccess / Date.now()) * 0.3;
+      // Combined score (70% progress, 30% recency)
+      const aScore = (aProgress / 100) * 0.7 + (aLastAccess / Date.now()) * 0.3;
+      const bScore = (bProgress / 100) * 0.7 + (bLastAccess / Date.now()) * 0.3;
       
       return bScore - aScore;
     });
@@ -107,7 +116,7 @@ export function useSecurityScore() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Имитируем загрузку данных
+    // Simulate data loading
     const timer = setTimeout(() => {
       const securityDetails = calculateSecurityScore(mockMetrics);
       setDetails(securityDetails);

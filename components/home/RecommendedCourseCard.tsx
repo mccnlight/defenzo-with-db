@@ -62,7 +62,7 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.md,
     color: Colors.dark.text,
     marginBottom: Layout.spacing.md,
-    height: 44, // Фиксированная высота для двух строк
+    height: 44, // Fixed height for two lines
   },
   stats: {
     flexDirection: 'row',

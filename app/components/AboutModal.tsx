@@ -49,19 +49,19 @@ const TeamMember = ({ name, role, email, github }: TeamMemberProps) => (
 
 const teamMembers = [
   {
-    name: "Имя Фамилия",
+    name: "Name Surname",
     role: "Frontend Developer",
     email: "student1@astanait.edu.kz",
     github: "github-username1",
   },
   {
-    name: "Имя Фамилия",
+    name: "Name Surname",
     role: "Backend Developer",
     email: "student2@astanait.edu.kz",
     github: "github-username2",
   },
   {
-    name: "Имя Фамилия",
+    name: "Name Surname",
     role: "UI/UX Designer",
     email: "student3@astanait.edu.kz",
     github: "github-username3",

@@ -3,11 +3,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 import { Platform } from 'react-native';
 
-// IMPORTANT: Change this IP address to your local machine's IP address
-// To find your IP address:
-// - On Windows: Run 'ipconfig' in Command Prompt
-// - On macOS/Linux: Run 'ifconfig' or 'ip addr' in Terminal
-// Make sure your mobile device and development machine are on the same network
 export const BASE_URL = 'http://10.42.0.201:8081';
 export const API_URL = `${BASE_URL}/api`;
 
@@ -77,8 +72,9 @@ export const uploadProfilePicture = async () => {
       quality: 0.8,
     });
 
+    // Handle cancellation gracefully
     if (result.canceled) {
-      throw new Error('Image picking was canceled');
+      return null; // Return null instead of throwing an error
     }
 
     console.log('Selected image:', result.assets[0]);

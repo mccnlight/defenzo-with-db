@@ -16,7 +16,7 @@ import { useCourseStore } from '@/app/store/courseStore';
 import { getProfile, User as ApiUser } from '@/app/services/api';
 import NewsCard from '@/components/news/NewsCard';
 
-// Временные моковые данные для демонстрации
+// Temporary mock data for demonstration
 const mockUserMetrics = {
   coursesCompleted: 3,
   totalCourses: 8,
@@ -86,13 +86,14 @@ export const globalAchievements: Achievement[] = [
 
 export default function HomeScreen() {
   const [isLoading, setIsLoading] = useState(true);
-  const { courses, fetchCourses } = useCourseStore();
+  const { courses, userProgress, fetchCourses, fetchUserProgress } = useCourseStore();
   const [user, setUser] = useState<ApiUser | null>(null);
 
   useEffect(() => {
-    // Fetch user profile
+    // Fetch user profile and progress
     getProfile().then(setUser).catch(() => setUser(null));
     fetchCourses();
+    fetchUserProgress();
     const timer = setTimeout(() => {
       setIsLoading(false);
     }, 300);
@@ -102,13 +103,23 @@ export default function HomeScreen() {
   // Оптимизируем получение курсов с помощью useMemo
   const { recommendedCourses, continuelearningCourses, featuredCourse } = useMemo(() => {
     const recommended = getRecommendedCourses(courses, mockUserMetrics);
-    const continuing = getContinueLearningCourses(courses, mockUserMetrics);
+    const continuing = getContinueLearningCourses(courses, userProgress || []);
+    
+    // Calculate progress for each course
+    const coursesWithProgress = continuing.map(course => {
+      const courseProgress = (userProgress || []).filter(p => p.course_id === course.id && p.lesson_id) || [];
+      const completedLessons = courseProgress.filter(p => p.completed).length;
+      const totalLessons = course.lessons?.length || 0;
+      const calculatedProgress = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
+      return { ...course, progress: calculatedProgress };
+    });
+
     return {
       recommendedCourses: recommended,
-      continuelearningCourses: continuing,
-      featuredCourse: continuing[0] || courses[0]
+      continuelearningCourses: coursesWithProgress,
+      featuredCourse: coursesWithProgress[0] || courses[0]
     };
-  }, [courses]);
+  }, [courses, userProgress]);
   
   const latestNews = mockNewsArticles[0];
 

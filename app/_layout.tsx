@@ -13,6 +13,7 @@ import {
 import { SplashScreen } from 'expo-router';
 import Colors from '@/constants/Colors';
 import { StyleSheet } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 // Prevent splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync();
@@ -36,7 +37,7 @@ export default function RootLayout() {
   }
 
   return (
-    <>
+    <GestureHandlerRootView style={{ flex: 1 }}>
       <Stack
         screenOptions={{
           headerShown: false,
@@ -49,7 +50,7 @@ export default function RootLayout() {
         <Stack.Screen name="+not-found" />
       </Stack>
       <StatusBar style="light" />
-    </>
+    </GestureHandlerRootView>
   );
 }
 
