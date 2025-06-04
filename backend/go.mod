@@ -1,4 +1,4 @@
-module github.com/nurpe/defenzo
+module defenzo
 
 go 1.21
 

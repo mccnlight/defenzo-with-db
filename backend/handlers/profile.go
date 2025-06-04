@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"defenzo/config"
+	"defenzo/middleware"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -8,9 +10,6 @@ import (
 	"os"
 	"path/filepath"
 	"time"
-
-	"github.com/nurpe/defenzo/config"
-	"github.com/nurpe/defenzo/middleware"
 )
 
 // UploadProfilePicture handles profile picture upload

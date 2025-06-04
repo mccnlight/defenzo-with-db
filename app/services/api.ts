@@ -2,6 +2,7 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 import { Platform } from 'react-native';
+import { getToken } from '@/app/services/auth';
 
 export const BASE_URL = 'http://10.42.0.201:8081';
 export const API_URL = `${BASE_URL}/api`;
@@ -37,6 +38,24 @@ export interface User {
   email: string;
   full_name: string;
   profile_picture_url: string | null;
+}
+
+export interface UserBadge {
+  id: string;
+  badge: {
+    id: string;
+    name: string;
+    description: string;
+    icon: string;
+    category: string;
+    requirements: {
+      type: string;
+      value: number;
+    };
+  };
+  progress: number;
+  completed: boolean;
+  completed_at?: string;
 }
 
 export const login = async (credentials: LoginCredentials) => {
@@ -131,6 +150,16 @@ export const updateProfile = async (data: { full_name?: string }) => {
 export const getProfile = async (): Promise<User> => {
   const response = await api.get('/profile');
   return response.data;
+};
+
+export const getBadges = async (): Promise<UserBadge[]> => {
+  try {
+    const response = await api.get('/user/badges');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching badges:', error);
+    throw error;
+  }
 };
 
 export default api; 

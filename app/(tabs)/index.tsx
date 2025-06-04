@@ -15,6 +15,7 @@ import { getRecommendedCourses, getContinueLearningCourses } from '@/hooks/useSe
 import { useCourseStore } from '@/app/store/courseStore';
 import { getProfile, User as ApiUser } from '@/app/services/api';
 import NewsCard from '@/components/news/NewsCard';
+import { useBadgeStore, UserBadge } from '@/app/store/badgeStore';
 
 // Temporary mock data for demonstration
 const mockUserMetrics = {
@@ -88,12 +89,14 @@ export default function HomeScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const { courses, userProgress, fetchCourses, fetchUserProgress } = useCourseStore();
   const [user, setUser] = useState<ApiUser | null>(null);
+  const { badges, fetchBadges } = useBadgeStore();
 
   useEffect(() => {
     // Fetch user profile and progress
     getProfile().then(setUser).catch(() => setUser(null));
     fetchCourses();
     fetchUserProgress();
+    fetchBadges();
     const timer = setTimeout(() => {
       setIsLoading(false);
     }, 300);
@@ -187,7 +190,7 @@ export default function HomeScreen() {
             )}
 
             <View style={styles.section}>
-              <LatestAchievements achievements={globalAchievements.slice(0, 3)} />
+              <LatestAchievements />
             </View>
 
             <View style={styles.section}>
@@ -203,12 +206,12 @@ export default function HomeScreen() {
   );
 }
 
-interface LatestAchievementsProps {
-  achievements: Achievement[];
-}
-
-const LatestAchievements = ({ achievements }: LatestAchievementsProps) => {
+const LatestAchievements = () => {
   const router = useRouter();
+  const { badges } = useBadgeStore();
+  const latestBadges = badges.slice(0, 3);
+
+  if (latestBadges.length === 0) return null;
 
   return (
     <>
@@ -228,36 +231,36 @@ const LatestAchievements = ({ achievements }: LatestAchievementsProps) => {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.achievementsContainer}
         >
-        {achievements.map((achievement: Achievement) => (
+        {latestBadges.map((userBadge: UserBadge) => (
           <TouchableOpacity 
-            key={achievement.id} 
+            key={userBadge.id} 
             style={styles.achievementCard}
             onPress={() => router.push('/(screens)/badges')}
           >
             <View style={[
               styles.achievementIcon,
-              { backgroundColor: achievement.color + '20' }
+              { backgroundColor: Colors.dark.primary + '20' }
             ]}>
-              <Text style={styles.achievementEmoji}>{achievement.icon}</Text>
+              <Text style={styles.achievementEmoji}>{userBadge.badge.icon}</Text>
             </View>
             <View style={styles.achievementContent}>
-              <Text style={styles.achievementTitle}>{achievement.title}</Text>
+              <Text style={styles.achievementTitle}>{userBadge.badge.name}</Text>
               <Text style={styles.achievementDescription} numberOfLines={2}>
-                {achievement.description}
+                {userBadge.badge.description}
               </Text>
               <View style={styles.progressContainer}>
                 <View 
                   style={[
                     styles.progressBar,
                     { 
-                      width: `${achievement.progress}%`,
-                      backgroundColor: achievement.color
+                      width: `${userBadge.progress}%`,
+                      backgroundColor: Colors.dark.primary
                     }
                   ]} 
                 />
               </View>
-              <Text style={[styles.progressText, { color: achievement.color }]}>
-                {achievement.progress}% Complete
+              <Text style={[styles.progressText, { color: Colors.dark.primary }]}>
+                {userBadge.progress}% Complete
               </Text>
             </View>
           </TouchableOpacity>

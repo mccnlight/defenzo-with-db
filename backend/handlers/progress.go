@@ -10,9 +10,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/nurpe/defenzo/config"
-	"github.com/nurpe/defenzo/middleware"
-	"github.com/nurpe/defenzo/models"
+	"defenzo/config"
+	"defenzo/middleware"
+	"defenzo/models"
 )
 
 // GetUserProgress handles getting user's course progress

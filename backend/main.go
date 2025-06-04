@@ -1,6 +1,8 @@
 package main
 
 import (
+	"defenzo/config"
+	"defenzo/routes"
 	"log"
 	"net/http"
 	"os"
@@ -8,9 +10,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
 	"github.com/rs/cors"
-
-	"github.com/nurpe/defenzo/config"
-	"github.com/nurpe/defenzo/routes"
 )
 
 func main() {

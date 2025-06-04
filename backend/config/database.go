@@ -87,12 +87,76 @@ func InitDB() {
 		log.Fatalf("Failed to create user_course_progress table: %v", err)
 	}
 
+	// Create badges table
+	createBadgesTable := `CREATE TABLE IF NOT EXISTS badges (
+		id TEXT PRIMARY KEY,
+		name TEXT NOT NULL,
+		description TEXT NOT NULL,
+		icon TEXT NOT NULL,
+		category TEXT NOT NULL,
+		requirement_type TEXT NOT NULL,
+		requirement_value INTEGER,
+		created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+	);`
+	_, err = DB.Exec(createBadgesTable)
+	if err != nil {
+		log.Fatalf("Failed to create badges table: %v", err)
+	}
+
+	// Create user_badges table
+	createUserBadgesTable := `CREATE TABLE IF NOT EXISTS user_badges (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		user_id INTEGER NOT NULL,
+		badge_id TEXT NOT NULL,
+		progress INTEGER DEFAULT 0,
+		completed BOOLEAN DEFAULT 0,
+		awarded_at DATETIME,
+		FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
+		FOREIGN KEY(badge_id) REFERENCES badges(id) ON DELETE CASCADE,
+		UNIQUE(user_id, badge_id)
+	);`
+	_, err = DB.Exec(createUserBadgesTable)
+	if err != nil {
+		log.Fatalf("Failed to create user_badges table: %v", err)
+	}
+
 	// Create index for faster progress lookups
 	createIndex := `CREATE INDEX IF NOT EXISTS idx_user_course_progress 
 		ON user_course_progress(user_id, course_id, lesson_id);`
 	_, err = DB.Exec(createIndex)
 	if err != nil {
 		log.Fatalf("Failed to create index: %v", err)
+	}
+
+	// Run migrations first
+	MigrateDB()
+
+	// Insert default badges if they don't exist
+	insertDefaultBadges := `
+	INSERT OR IGNORE INTO badges (id, name, description, icon, category, requirement_type, requirement_value) VALUES
+	-- Course Completion Badges
+	('course_complete_basics', 'Course Master: Cybersecurity Basics', 'Complete the Cybersecurity Basics course', '🎓', 'course_completion', 'course_completion', NULL),
+	('course_complete_password', 'Course Master: Password Security', 'Complete the Password Security course', '🎓', 'course_completion', 'course_completion', NULL),
+	('course_complete_web', 'Course Master: Web Safety', 'Complete the Web Safety course', '🎓', 'course_completion', 'course_completion', NULL),
+
+	-- Security Tool Usage Badges
+	('tool_password', 'Password Guardian', 'Check passwords using the password checker tool', '🔐', 'tool_usage', 'tool_usage', 5),
+	('tool_url', 'URL Defender', 'Scan URLs using the URL scanner tool', '🌐', 'tool_usage', 'tool_usage', 5),
+	('tool_email', 'Email Protector', 'Check emails using the email checker tool', '📧', 'tool_usage', 'tool_usage', 5),
+
+	-- Learning Progress Badges
+	('progress_quick', 'Quick Learner', 'Complete 5 courses', '🚀', 'learning_progress', 'courses_completed', 5),
+	('progress_dedicated', 'Dedicated Student', 'Complete 10 courses', '📚', 'learning_progress', 'courses_completed', 10),
+	('progress_expert', 'Security Expert', 'Complete 20 courses', '🛡️', 'learning_progress', 'courses_completed', 20),
+	('progress_master', 'Master of Security', 'Complete all available courses', '👑', 'learning_progress', 'all_courses_completed', NULL),
+
+	-- Quiz Performance Badges
+	('quiz_champion', 'Quiz Champion', 'Score 90% or higher in 5 quizzes', '🏆', 'quiz_performance', 'high_scores', 5),
+	('quiz_perfect', 'Perfect Score', 'Get 100% in any quiz', '💯', 'quiz_performance', 'perfect_score', 1),
+	('quiz_consistent', 'Consistent Learner', 'Complete 10 quizzes with 80% or higher score', '📝', 'quiz_performance', 'consistent_scores', 10);`
+	_, err = DB.Exec(insertDefaultBadges)
+	if err != nil {
+		log.Fatalf("Failed to insert default badges: %v", err)
 	}
 
 	log.Println("Database initialized and tables ready.")
@@ -112,5 +176,26 @@ func MigrateDB() {
 	if err != nil {
 		// Ignore error if column already exists
 		log.Printf("Note: profile_picture_url column may already exist: %v", err)
+	}
+
+	// Add requirement_type column to badges table if it doesn't exist
+	_, err = DB.Exec(`ALTER TABLE badges ADD COLUMN requirement_type TEXT;`)
+	if err != nil {
+		// Ignore error if column already exists
+		log.Printf("Note: requirement_type column may already exist: %v", err)
+	}
+
+	// Add requirement_value column to badges table if it doesn't exist
+	_, err = DB.Exec(`ALTER TABLE badges ADD COLUMN requirement_value INTEGER;`)
+	if err != nil {
+		// Ignore error if column already exists
+		log.Printf("Note: requirement_value column may already exist: %v", err)
+	}
+
+	// Add category column to badges table if it doesn't exist
+	_, err = DB.Exec(`ALTER TABLE badges ADD COLUMN category TEXT;`)
+	if err != nil {
+		// Ignore error if column already exists
+		log.Printf("Note: category column may already exist: %v", err)
 	}
 }

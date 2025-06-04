@@ -5,10 +5,11 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"defenzo/config"
+	"defenzo/middleware"
+	"defenzo/models"
+
 	"github.com/gorilla/mux"
-	"github.com/nurpe/defenzo/config"
-	"github.com/nurpe/defenzo/middleware"
-	"github.com/nurpe/defenzo/models"
 )
 
 // GetCourses handles getting all courses

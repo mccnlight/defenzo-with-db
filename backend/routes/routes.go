@@ -3,9 +3,10 @@ package routes
 import (
 	"net/http"
 
+	"defenzo/handlers"
+	"defenzo/middleware"
+
 	"github.com/gorilla/mux"
-	"github.com/nurpe/defenzo/handlers"
-	"github.com/nurpe/defenzo/middleware"
 )
 
 // SetupRoutes configures all the routes for the application
@@ -29,6 +30,11 @@ func SetupRoutes(r *mux.Router) {
 	// Progress routes
 	r.HandleFunc("/api/user/progress", middleware.AuthMiddleware(handlers.GetUserProgress)).Methods("GET")
 	r.HandleFunc("/api/user/progress", middleware.AuthMiddleware(handlers.UpdateUserProgress)).Methods("POST")
+
+	// Badge routes
+	r.HandleFunc("/api/user/badges", middleware.AuthMiddleware(handlers.GetUserBadges)).Methods("GET")
+	r.HandleFunc("/api/user/badges/progress", middleware.AuthMiddleware(handlers.UpdateBadgeProgress)).Methods("POST")
+	r.HandleFunc("/api/user/badges/check", middleware.AuthMiddleware(handlers.CheckAndAwardBadges)).Methods("POST")
 
 	// Serve static files
 	fs := http.FileServer(http.Dir("uploads"))

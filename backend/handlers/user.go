@@ -2,6 +2,9 @@ package handlers
 
 import (
 	"database/sql"
+	"defenzo/config"
+	"defenzo/middleware"
+	"defenzo/models"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -9,10 +12,6 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
-
-	"github.com/nurpe/defenzo/config"
-	"github.com/nurpe/defenzo/middleware"
-	"github.com/nurpe/defenzo/models"
 )
 
 // Register handles user registration

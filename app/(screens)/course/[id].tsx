@@ -30,6 +30,7 @@ import CardsLesson from '@/components/lessons/CardsLesson';
 import ScenarioLesson from '@/components/lessons/ScenarioLesson';
 import VisualLesson from '@/components/lessons/VisualLesson';
 import { useCourseStore } from '@/app/store/courseStore';
+import { useBadgeStore } from '@/app/store/badgeStore';
 
 export default function CourseScreen() {
   const { id } = useLocalSearchParams();
@@ -40,6 +41,7 @@ export default function CourseScreen() {
   const [error, setError] = useState<string | null>(null);
   
   const { updateLessonStatus, fetchCourseById, fetchUserProgress, userProgress } = useCourseStore();
+  const { checkAndAwardBadges } = useBadgeStore();
   const [course, setCourse] = useState<Course | null>(null);
 
   const progressValue = course ? Math.max(0, Math.min(100, course.progress)) : 0;
@@ -116,15 +118,25 @@ export default function CourseScreen() {
     setSelectedLesson(lesson);
   };
 
-  const handleLessonComplete = () => {
-    if (!selectedLesson) return;
-    console.log('Lesson completed:', {
-      courseId: course.id,
-      lessonId: selectedLesson.id,
-      lessonTitle: selectedLesson.title
-    });
-    updateLessonStatus(course.id, selectedLesson.id, true);
-    setSelectedLesson(null);
+  const handleLessonComplete = async (lessonId: string) => {
+    try {
+      // Update lesson status
+      await updateLessonStatus(course.id, lessonId, true);
+      
+      // Check if course is completed
+      const allLessonsCompleted = course.lessons.every(lesson => 
+        userProgress.some(p => p.lesson_id === lesson.id && p.completed)
+      );
+
+      if (allLessonsCompleted) {
+        // Award course completion badge
+        await checkAndAwardBadges('course_completion', {
+          course_id: course.id
+        });
+      }
+    } catch (error) {
+      console.error('Failed to complete lesson:', error);
+    }
   };
 
   const renderLessonContent = () => {
@@ -136,21 +148,21 @@ export default function CourseScreen() {
           <DialogLesson
             introduction={selectedLesson.content.introduction || ''}
             questions={selectedLesson.content.questions || []}
-            onComplete={handleLessonComplete}
+            onComplete={() => handleLessonComplete(selectedLesson.id)}
           />
         );
       case 'cards':
         return (
           <CardsLesson
             questions={selectedLesson.content.questions || []}
-            onComplete={handleLessonComplete}
+            onComplete={() => handleLessonComplete(selectedLesson.id)}
           />
         );
       case 'scenario':
         return (
           <ScenarioLesson
             scenarios={selectedLesson.content.scenarios || []}
-            onComplete={handleLessonComplete}
+            onComplete={() => handleLessonComplete(selectedLesson.id)}
           />
         );
       case 'visual':
@@ -160,7 +172,7 @@ export default function CourseScreen() {
             title={selectedLesson.title}
             description={selectedLesson.content.visualTasks[0].description}
             visualTasks={selectedLesson.content.visualTasks}
-            onComplete={handleLessonComplete}
+            onComplete={() => handleLessonComplete(selectedLesson.id)}
           />
         );
       default:

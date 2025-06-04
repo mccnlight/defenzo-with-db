@@ -1,14 +1,13 @@
 package handlers
 
 import (
+	"defenzo/models"
 	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"os"
-
-	"github.com/nurpe/defenzo/models"
 )
 
 // ScanURL handles URL scanning using VirusTotal
