@@ -163,6 +163,8 @@ function getLessonTypeLabel(type: string): string {
       return 'Real-world Scenario';
     case 'visual':
       return 'Visual Exercise';
+    case 'chat_simulation':
+      return 'Chat Simulation';
     default:
       return 'Lesson';
   }

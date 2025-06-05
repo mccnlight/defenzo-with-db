@@ -13,6 +13,8 @@ import (
 	"defenzo/config"
 	"defenzo/middleware"
 	"defenzo/models"
+
+	"github.com/gorilla/mux"
 )
 
 // GetUserProgress handles getting user's course progress
@@ -261,4 +263,110 @@ func UpdateUserProgress(w http.ResponseWriter, r *http.Request) {
 	progress.Progress = courseProgress
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(progress)
+}
+
+// UpdateLessonProgress handles updating a user's progress for a specific lesson
+func UpdateLessonProgress(w http.ResponseWriter, r *http.Request) {
+	userID, err := middleware.GetUserID(r)
+	if err != nil {
+		http.Error(w, `{"error": "Unauthorized"}`, http.StatusUnauthorized)
+		return
+	}
+
+	vars := mux.Vars(r)
+	courseID := vars["courseId"]
+	lessonID := vars["lessonId"]
+
+	var progressData struct {
+		Completed bool `json:"completed"`
+		Progress  int  `json:"progress"`
+		// Add fields for chat simulation
+		SelectedResponses []string `json:"selectedResponses,omitempty"`
+		Outcome           string   `json:"outcome,omitempty"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&progressData); err != nil {
+		http.Error(w, `{"error": "Invalid request body"}`, http.StatusBadRequest)
+		return
+	}
+
+	// Get lesson type
+	var lessonType string
+	err = config.DB.QueryRow("SELECT type FROM lessons WHERE id = ? AND course_id = ?", lessonID, courseID).Scan(&lessonType)
+	if err != nil {
+		http.Error(w, `{"error": "Lesson not found"}`, http.StatusNotFound)
+		return
+	}
+
+	// For chat simulation, store additional data
+	var contentData []byte
+	if lessonType == "chat_simulation" {
+		contentData, err = json.Marshal(map[string]interface{}{
+			"selectedResponses": progressData.SelectedResponses,
+			"outcome":           progressData.Outcome,
+		})
+		if err != nil {
+			http.Error(w, `{"error": "Failed to process progress data"}`, http.StatusInternalServerError)
+			return
+		}
+	}
+
+	// Update or insert progress
+	_, err = config.DB.Exec(`
+		INSERT INTO user_course_progress (user_id, course_id, lesson_id, completed, progress, content_data, last_accessed)
+		VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+		ON DUPLICATE KEY UPDATE
+		completed = VALUES(completed),
+		progress = VALUES(progress),
+		content_data = VALUES(content_data),
+		last_accessed = CURRENT_TIMESTAMP
+	`, userID, courseID, lessonID, progressData.Completed, progressData.Progress, contentData)
+
+	if err != nil {
+		http.Error(w, `{"error": "Failed to update progress"}`, http.StatusInternalServerError)
+		return
+	}
+
+	// Update course-level progress
+	if progressData.Completed {
+		// Count total lessons and completed lessons
+		var totalLessons, completedLessons int
+		err = config.DB.QueryRow(`
+			SELECT 
+				(SELECT COUNT(*) FROM lessons WHERE course_id = ?) as total,
+				(SELECT COUNT(*) FROM user_course_progress 
+				WHERE user_id = ? AND course_id = ? AND completed = true) as completed
+		`, courseID, userID, courseID).Scan(&totalLessons, &completedLessons)
+		if err != nil {
+			http.Error(w, `{"error": "Failed to calculate course progress"}`, http.StatusInternalServerError)
+			return
+		}
+
+		// Calculate course progress percentage
+		courseProgress := 0
+		if totalLessons > 0 {
+			courseProgress = (completedLessons * 100) / totalLessons
+		}
+
+		// Update course-level progress
+		_, err = config.DB.Exec(`
+			INSERT INTO user_course_progress (user_id, course_id, completed, progress, last_accessed)
+			VALUES (?, ?, true, ?, CURRENT_TIMESTAMP)
+			ON DUPLICATE KEY UPDATE
+			completed = VALUES(completed),
+			progress = VALUES(progress),
+			last_accessed = CURRENT_TIMESTAMP
+		`, userID, courseID, courseProgress)
+		if err != nil {
+			http.Error(w, `{"error": "Failed to update course progress"}`, http.StatusInternalServerError)
+			return
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"message":   "Progress updated successfully",
+		"completed": progressData.Completed,
+		"progress":  progressData.Progress,
+	})
 }

@@ -26,7 +26,7 @@ export interface Achievement {
 export interface Lesson {
   id: string;
   title: string;
-  type: 'dialog' | 'cards' | 'scenario' | 'visual';
+  type: 'dialog' | 'cards' | 'scenario' | 'visual' | 'chat_simulation';
   duration: string;
   content: LessonContent;
   completed: boolean;

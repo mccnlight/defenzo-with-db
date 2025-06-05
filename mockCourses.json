@@ -217,6 +217,78 @@
           ]
         },
         "completed": false
+      },
+      {
+        "id": "lesson-7",
+        "title": "Phishing Chat Simulation",
+        "type": "chat_simulation",
+        "duration": "20m",
+        "content": {
+          "scenario": {
+            "title": "Suspicious Job Offer",
+            "description": "You receive a message from someone claiming to be a recruiter offering a high-paying remote job. Let's see how you handle this situation.",
+            "messages": [
+              {
+                "id": "msg1",
+                "sender": "recruiter",
+                "text": "Hi! I'm Sarah from TechRecruit. I found your profile and we have a perfect remote position that pays $5000/month. Are you interested?",
+                "timestamp": "10:00 AM"
+              },
+              {
+                "id": "msg2",
+                "sender": "recruiter",
+                "text": "Great! The position is for a Data Entry Specialist. We'll need you to fill out some forms and provide your bank details for direct deposit. Can you send me your resume and bank information?",
+                "timestamp": "10:01 AM",
+                "triggeredBy": "resp1"
+              },
+              {
+                "id": "msg3",
+                "sender": "recruiter",
+                "text": "Of course! We're a leading tech company based in Singapore. The position is fully remote and requires no experience. We'll provide all training. Would you like to proceed with the application?",
+                "timestamp": "10:01 AM",
+                "triggeredBy": "resp2"
+              },
+              {
+                "id": "msg4",
+                "sender": "recruiter",
+                "text": "Are you sure? This is a limited-time opportunity with great benefits. We can start the process right now!",
+                "timestamp": "10:01 AM",
+                "triggeredBy": "resp3"
+              }
+            ],
+            "responses": [
+              {
+                "id": "resp1",
+                "text": "Yes, I'm interested! Tell me more.",
+                "nextMessage": "msg2",
+                "feedback": "Be cautious! Legitimate recruiters usually provide more details about the company and position upfront."
+              },
+              {
+                "id": "resp2",
+                "text": "Could you tell me more about the company and the position?",
+                "nextMessage": "msg3",
+                "feedback": "Good approach! Always ask for more information before proceeding."
+              },
+              {
+                "id": "resp3",
+                "text": "I'm not interested, thank you.",
+                "nextMessage": "msg4",
+                "feedback": "Sometimes the safest option is to decline suspicious offers."
+              }
+            ],
+            "outcomes": {
+              "positive": {
+                "title": "You've successfully identified a potential phishing attempt!",
+                "description": "By asking for more information and being cautious, you've protected yourself from a potential scam."
+              },
+              "negative": {
+                "title": "You might have fallen for a phishing attempt",
+                "description": "Remember to always verify the identity of recruiters and be cautious of offers that seem too good to be true."
+              }
+            }
+          }
+        },
+        "completed": false
       }
     ]
   },

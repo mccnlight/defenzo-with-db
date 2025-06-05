@@ -29,6 +29,7 @@ import DialogLesson from '@/components/lessons/DialogLesson';
 import CardsLesson from '@/components/lessons/CardsLesson';
 import ScenarioLesson from '@/components/lessons/ScenarioLesson';
 import VisualLesson from '@/components/lessons/VisualLesson';
+import { ChatSimulation } from '@/components/ChatSimulation';
 import { useCourseStore } from '@/app/store/courseStore';
 import { useBadgeStore } from '@/app/store/badgeStore';
 
@@ -172,6 +173,14 @@ export default function CourseScreen() {
             title={selectedLesson.title}
             description={selectedLesson.content.visualTasks[0].description}
             visualTasks={selectedLesson.content.visualTasks}
+            onComplete={() => handleLessonComplete(selectedLesson.id)}
+          />
+        );
+      case 'chat_simulation':
+        if (!selectedLesson.content.scenario) return null;
+        return (
+          <ChatSimulation
+            content={selectedLesson.content as any}
             onComplete={() => handleLessonComplete(selectedLesson.id)}
           />
         );
