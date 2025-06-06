@@ -108,49 +108,6 @@
         "completed": false
       },
       {
-        "id": "lesson-4",
-        "title": "Security Settings Check",
-        "type": "visual",
-        "duration": "20m",
-        "content": {
-          "visualTasks": [
-            {
-              "id": "vt1",
-              "title": "Find Security Risks",
-              "description": "Identify potential security risks in these device settings. Click on the areas that need attention.",
-              "image": "security-settings.jpg",
-              "hotspots": [
-                {
-                  "id": "hs1",
-                  "x": 30,
-                  "y": 40,
-                  "size": 20,
-                  "title": "Outdated Software",
-                  "description": "System updates are pending for over 30 days, leaving your device vulnerable to known security issues."
-                },
-                {
-                  "id": "hs2",
-                  "x": 60,
-                  "y": 70,
-                  "size": 20,
-                  "title": "Weak Privacy Settings",
-                  "description": "Location services are enabled for all apps, potentially exposing your location data unnecessarily."
-                },
-                {
-                  "id": "hs3",
-                  "x": 45,
-                  "y": 55,
-                  "size": 20,
-                  "title": "App Permissions",
-                  "description": "Several apps have unnecessary permissions that could compromise your privacy."
-                }
-              ]
-            }
-          ]
-        },
-        "completed": false
-      },
-      {
         "id": "lesson-5",
         "title": "Data Backup Strategies",
         "type": "dialog",
@@ -172,121 +129,6 @@
               "explanation": "The 3-2-1 backup rule is a best practice that ensures your data survives various types of disasters."
             }
           ]
-        },
-        "completed": false
-      },
-      {
-        "id": "lesson-6",
-        "title": "Digital Footprint Awareness",
-        "type": "visual",
-        "duration": "10m",
-        "content": {
-          "visualTasks": [
-            {
-              "id": "vt1",
-              "title": "Track Your Digital Trail",
-              "description": "Discover how your online activities leave traces and learn to manage them.",
-              "image": "digital-footprint.jpg",
-              "hotspots": [
-                {
-                  "id": "hs1",
-                  "x": 25,
-                  "y": 35,
-                  "size": 20,
-                  "title": "Social Media Activity",
-                  "description": "Your likes, comments, and shares create a permanent record of your interests and opinions."
-                },
-                {
-                  "id": "hs2",
-                  "x": 75,
-                  "y": 45,
-                  "size": 20,
-                  "title": "Search History",
-                  "description": "Your search queries can reveal personal information and browsing patterns."
-                },
-                {
-                  "id": "hs3",
-                  "x": 50,
-                  "y": 65,
-                  "size": 20,
-                  "title": "Online Shopping",
-                  "description": "Purchase history and browsing patterns are tracked and stored by retailers."
-                }
-              ]
-            }
-          ]
-        },
-        "completed": false
-      },
-      {
-        "id": "lesson-7",
-        "title": "Phishing Chat Simulation",
-        "type": "chat_simulation",
-        "duration": "20m",
-        "content": {
-          "scenario": {
-            "title": "Suspicious Job Offer",
-            "description": "You receive a message from someone claiming to be a recruiter offering a high-paying remote job. Let's see how you handle this situation.",
-            "messages": [
-              {
-                "id": "msg1",
-                "sender": "recruiter",
-                "text": "Hi! I'm Sarah from TechRecruit. I found your profile and we have a perfect remote position that pays $5000/month. Are you interested?",
-                "timestamp": "10:00 AM"
-              },
-              {
-                "id": "msg2",
-                "sender": "recruiter",
-                "text": "Great! The position is for a Data Entry Specialist. We'll need you to fill out some forms and provide your bank details for direct deposit. Can you send me your resume and bank information?",
-                "timestamp": "10:01 AM",
-                "triggeredBy": "resp1"
-              },
-              {
-                "id": "msg3",
-                "sender": "recruiter",
-                "text": "Of course! We're a leading tech company based in Singapore. The position is fully remote and requires no experience. We'll provide all training. Would you like to proceed with the application?",
-                "timestamp": "10:01 AM",
-                "triggeredBy": "resp2"
-              },
-              {
-                "id": "msg4",
-                "sender": "recruiter",
-                "text": "Are you sure? This is a limited-time opportunity with great benefits. We can start the process right now!",
-                "timestamp": "10:01 AM",
-                "triggeredBy": "resp3"
-              }
-            ],
-            "responses": [
-              {
-                "id": "resp1",
-                "text": "Yes, I'm interested! Tell me more.",
-                "nextMessage": "msg2",
-                "feedback": "Be cautious! Legitimate recruiters usually provide more details about the company and position upfront."
-              },
-              {
-                "id": "resp2",
-                "text": "Could you tell me more about the company and the position?",
-                "nextMessage": "msg3",
-                "feedback": "Good approach! Always ask for more information before proceeding."
-              },
-              {
-                "id": "resp3",
-                "text": "I'm not interested, thank you.",
-                "nextMessage": "msg4",
-                "feedback": "Sometimes the safest option is to decline suspicious offers."
-              }
-            ],
-            "outcomes": {
-              "positive": {
-                "title": "You've successfully identified a potential phishing attempt!",
-                "description": "By asking for more information and being cautious, you've protected yourself from a potential scam."
-              },
-              "negative": {
-                "title": "You might have fallen for a phishing attempt",
-                "description": "Remember to always verify the identity of recruiters and be cautious of offers that seem too good to be true."
-              }
-            }
-          }
         },
         "completed": false
       }
@@ -339,136 +181,6 @@
           ]
         },
         "completed": false
-      },
-      {
-        "id": "lesson-2",
-        "title": "Password Manager Setup",
-        "type": "visual",
-        "duration": "15m",
-        "content": {
-          "visualTasks": [
-            {
-              "id": "vt1",
-              "title": "Password Manager Features",
-              "description": "Learn to use a password manager effectively by identifying key features.",
-              "image": "password-manager.jpg",
-              "hotspots": [
-                {
-                  "id": "hs1",
-                  "x": 30,
-                  "y": 40,
-                  "size": 20,
-                  "title": "Password Generator",
-                  "description": "Creates strong, random passwords tailored to website requirements."
-                },
-                {
-                  "id": "hs2",
-                  "x": 70,
-                  "y": 30,
-                  "size": 20,
-                  "title": "Security Dashboard",
-                  "description": "Monitors password strength and alerts you to compromised accounts."
-                }
-              ]
-            }
-          ]
-        },
-        "completed": false
-      },
-      {
-        "id": "lesson-3",
-        "title": "2FA Implementation",
-        "type": "scenario",
-        "duration": "15m",
-        "content": {
-          "scenarios": [
-            {
-              "id": "sc1",
-              "situation": "You're setting up 2FA for your email. Which method should you choose?",
-              "options": [
-                "SMS codes",
-                "Authenticator app",
-                "Email to backup address",
-                "Security questions"
-              ],
-              "correctOption": 1,
-              "explanation": "Authenticator apps are more secure than SMS, which can be intercepted through SIM swapping attacks."
-            },
-            {
-              "id": "sc2",
-              "situation": "You've lost your phone with your 2FA authenticator app. What should you do?",
-              "options": [
-                "Panic and create new accounts",
-                "Use backup codes stored securely",
-                "Wait for the phone to be found",
-                "Contact the phone manufacturer"
-              ],
-              "correctOption": 1,
-              "explanation": "Always save backup codes in a secure location when setting up 2FA to handle device loss or failure."
-            }
-          ]
-        },
-        "completed": false
-      },
-      {
-        "id": "lesson-4",
-        "title": "Account Recovery Setup",
-        "type": "dialog",
-        "duration": "15m",
-        "content": {
-          "introduction": "Learn how to set up secure account recovery methods to prevent lockouts.",
-          "questions": [
-            {
-              "id": "q1",
-              "text": "What is the safest way to store recovery codes?",
-              "type": "multiple_choice",
-              "options": [
-                "In a password manager",
-                "Written on a sticky note",
-                "In your email drafts",
-                "As a phone contact"
-              ],
-              "correctAnswer": "In a password manager",
-              "explanation": "A password manager provides encrypted storage and is more secure than physical notes or unencrypted digital storage."
-            }
-          ]
-        },
-        "completed": false
-      },
-      {
-        "id": "lesson-5",
-        "title": "Security Key Protection",
-        "type": "visual",
-        "duration": "15m",
-        "content": {
-          "visualTasks": [
-            {
-              "id": "vt1",
-              "title": "Hardware Security Keys",
-              "description": "Learn about hardware security keys and how they provide superior account protection.",
-              "image": "security-keys.jpg",
-              "hotspots": [
-                {
-                  "id": "hs1",
-                  "x": 35,
-                  "y": 45,
-                  "size": 20,
-                  "title": "USB Connection",
-                  "description": "Physical connection ensures presence and prevents remote attacks."
-                },
-                {
-                  "id": "hs2",
-                  "x": 65,
-                  "y": 55,
-                  "size": 20,
-                  "title": "NFC Capability",
-                  "description": "Enables secure authentication with mobile devices."
-                }
-              ]
-            }
-          ]
-        },
-        "completed": false
       }
     ]
   },
@@ -501,68 +213,20 @@
         "type": "dialog",
         "duration": "15m",
         "content": {
-          "introduction": "Understand what phishing is and why it remains one of the most successful cyber attack methods.",
+          "introduction": "Learn to identify and protect against phishing attempts.",
           "questions": [
             {
               "id": "q1",
               "text": "What is phishing?",
               "type": "multiple_choice",
               "options": [
-                "A type of computer virus",
-                "A fraudulent attempt to obtain sensitive information",
-                "A network security tool",
-                "A password recovery method"
+                "A type of fishing",
+                "A method of catching fish",
+                "A cyber attack that tricks users into revealing sensitive information",
+                "A way to clean your computer"
               ],
-              "correctAnswer": "A fraudulent attempt to obtain sensitive information",
-              "explanation": "Phishing is a cyber attack that tricks users into revealing sensitive information by posing as a trustworthy entity."
-            },
-            {
-              "id": "q2",
-              "text": "Which of these is NOT a common phishing tactic?",
-              "type": "multiple_choice",
-              "options": [
-                "Creating urgency",
-                "Using official logos",
-                "Providing detailed contact information",
-                "Having spelling errors"
-              ],
-              "correctAnswer": "Providing detailed contact information",
-              "explanation": "Legitimate organizations provide clear contact information. Phishers often avoid this to prevent verification."
-            }
-          ]
-        },
-        "completed": false
-      },
-      {
-        "id": "lesson-2",
-        "title": "Email Security",
-        "type": "visual",
-        "duration": "20m",
-        "content": {
-          "visualTasks": [
-            {
-              "id": "vt1",
-              "title": "Spot the Phish",
-              "description": "Identify suspicious elements in this email that indicate it's a phishing attempt.",
-              "image": "phishing-email.jpg",
-              "hotspots": [
-                {
-                  "id": "hs1",
-                  "x": 20,
-                  "y": 30,
-                  "size": 20,
-                  "title": "Suspicious Sender",
-                  "description": "The email address doesn't match the claimed organization's domain."
-                },
-                {
-                  "id": "hs2",
-                  "x": 50,
-                  "y": 60,
-                  "size": 20,
-                  "title": "Urgent Action Required",
-                  "description": "Creating false urgency is a common tactic to pressure users into making mistakes."
-                }
-              ]
+              "correctAnswer": "A cyber attack that tricks users into revealing sensitive information",
+              "explanation": "Phishing is a type of social engineering attack where attackers impersonate legitimate entities to trick users into revealing sensitive information."
             }
           ]
         },
@@ -602,49 +266,6 @@
           ]
         },
         "completed": false
-      },
-      {
-        "id": "lesson-4",
-        "title": "Advanced Phishing Tactics",
-        "type": "visual",
-        "duration": "20m",
-        "content": {
-          "visualTasks": [
-            {
-              "id": "vt1",
-              "title": "Modern Phishing Techniques",
-              "description": "Learn to identify sophisticated phishing attempts that use advanced tactics.",
-              "image": "advanced-phishing.jpg",
-              "hotspots": [
-                {
-                  "id": "hs1",
-                  "x": 30,
-                  "y": 40,
-                  "size": 20,
-                  "title": "Look-alike Domain",
-                  "description": "Subtle misspellings or character substitutions in domain names."
-                },
-                {
-                  "id": "hs2",
-                  "x": 60,
-                  "y": 50,
-                  "size": 20,
-                  "title": "SSL Certificate",
-                  "description": "Even phishing sites can have HTTPS, don't rely solely on this for security."
-                },
-                {
-                  "id": "hs3",
-                  "x": 45,
-                  "y": 70,
-                  "size": 20,
-                  "title": "Clone Phishing",
-                  "description": "Exact copies of legitimate emails with modified links or attachments."
-                }
-              ]
-            }
-          ]
-        },
-        "completed": false
       }
     ]
   },
@@ -677,68 +298,20 @@
         "type": "dialog",
         "duration": "20m",
         "content": {
-          "introduction": "Understand the importance of data privacy and how to protect your personal information in the digital age.",
+          "introduction": "Learn about data privacy and how to protect your personal information.",
           "questions": [
             {
               "id": "q1",
-              "text": "What constitutes personal data?",
+              "text": "What is personal data?",
               "type": "multiple_choice",
               "options": [
-                "Only your name and address",
                 "Only financial information",
+                "Only medical records",
                 "Any information that can identify you",
-                "Only your social media posts"
+                "Only social media posts"
               ],
               "correctAnswer": "Any information that can identify you",
-              "explanation": "Personal data includes any information that can be used to identify an individual, directly or indirectly."
-            },
-            {
-              "id": "q2",
-              "text": "Which practice best protects your data privacy?",
-              "type": "multiple_choice",
-              "options": [
-                "Sharing everything publicly",
-                "Regular privacy audits",
-                "Never using the internet",
-                "Using public Wi-Fi"
-              ],
-              "correctAnswer": "Regular privacy audits",
-              "explanation": "Regular privacy audits help you maintain control over your data by reviewing and adjusting privacy settings."
-            }
-          ]
-        },
-        "completed": false
-      },
-      {
-        "id": "lesson-2",
-        "title": "Privacy Settings Mastery",
-        "type": "visual",
-        "duration": "25m",
-        "content": {
-          "visualTasks": [
-            {
-              "id": "vt1",
-              "title": "Privacy Settings Check",
-              "description": "Learn to configure privacy settings across different platforms and services.",
-              "image": "privacy-settings.jpg",
-              "hotspots": [
-                {
-                  "id": "hs1",
-                  "x": 30,
-                  "y": 40,
-                  "size": 20,
-                  "title": "Data Sharing Options",
-                  "description": "Control what information apps can access and share."
-                },
-                {
-                  "id": "hs2",
-                  "x": 60,
-                  "y": 70,
-                  "size": 20,
-                  "title": "Account Privacy",
-                  "description": "Manage who can see your information and activity."
-                }
-              ]
+              "explanation": "Personal data includes any information that can be used to identify you, directly or indirectly."
             }
           ]
         },
@@ -812,49 +385,6 @@
               ],
               "correctAnswer": "All sensitive personal data",
               "explanation": "Any data that could be valuable to attackers or harmful if exposed should be encrypted."
-            }
-          ]
-        },
-        "completed": false
-      },
-      {
-        "id": "lesson-5",
-        "title": "Secure Data Disposal",
-        "type": "visual",
-        "duration": "15m",
-        "content": {
-          "visualTasks": [
-            {
-              "id": "vt1",
-              "title": "Data Deletion Methods",
-              "description": "Learn proper techniques for securely disposing of sensitive data.",
-              "image": "data-disposal.jpg",
-              "hotspots": [
-                {
-                  "id": "hs1",
-                  "x": 25,
-                  "y": 35,
-                  "size": 20,
-                  "title": "File Shredding",
-                  "description": "Simple deletion doesn't remove data completely. Use secure deletion tools."
-                },
-                {
-                  "id": "hs2",
-                  "x": 75,
-                  "y": 45,
-                  "size": 20,
-                  "title": "Device Wiping",
-                  "description": "Proper device sanitization before disposal or recycling."
-                },
-                {
-                  "id": "hs3",
-                  "x": 50,
-                  "y": 65,
-                  "size": 20,
-                  "title": "Cloud Data",
-                  "description": "Remember to remove data from cloud services and backups."
-                }
-              ]
             }
           ]
         },

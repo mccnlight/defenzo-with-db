@@ -28,7 +28,6 @@ import { Course, Lesson } from '@/types/course';
 import DialogLesson from '@/components/lessons/DialogLesson';
 import CardsLesson from '@/components/lessons/CardsLesson';
 import ScenarioLesson from '@/components/lessons/ScenarioLesson';
-import VisualLesson from '@/components/lessons/VisualLesson';
 import { ChatSimulation } from '@/components/ChatSimulation';
 import { useCourseStore } from '@/app/store/courseStore';
 import { useBadgeStore } from '@/app/store/badgeStore';
@@ -163,16 +162,6 @@ export default function CourseScreen() {
         return (
           <ScenarioLesson
             scenarios={selectedLesson.content.scenarios || []}
-            onComplete={() => handleLessonComplete(selectedLesson.id)}
-          />
-        );
-      case 'visual':
-        if (!selectedLesson.content.visualTasks?.[0]) return null;
-        return (
-          <VisualLesson
-            title={selectedLesson.title}
-            description={selectedLesson.content.visualTasks[0].description}
-            visualTasks={selectedLesson.content.visualTasks}
             onComplete={() => handleLessonComplete(selectedLesson.id)}
           />
         );

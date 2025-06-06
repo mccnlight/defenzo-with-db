@@ -12,7 +12,6 @@ import {
   MessageSquare,
   Layers,
   Target,
-  Eye,
 } from 'lucide-react-native';
 import Colors from '@/constants/Colors';
 import Layout from '@/constants/Layout';
@@ -27,7 +26,6 @@ import Animated, {
 } from 'react-native-reanimated';
 import CardsLesson from '@/components/lessons/CardsLesson';
 import DialogLesson from '@/components/lessons/DialogLesson';
-import VisualLesson from '@/components/lessons/VisualLesson';
 
 const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
 
@@ -65,8 +63,6 @@ export default function LessonContent({
         return <MessageSquare {...iconProps} />;
       case 'scenario':
         return <Target {...iconProps} />;
-      case 'visual':
-        return <Eye {...iconProps} />;
       default:
         return <LayoutGrid {...iconProps} />;
     }
@@ -90,18 +86,6 @@ export default function LessonContent({
           <DialogLesson
             introduction={lesson.content.introduction}
             questions={lesson.content.questions}
-            onComplete={onComplete}
-          />
-        );
-      case 'visual':
-        if (!lesson.content.visualTasks) return null;
-        const firstTask = lesson.content.visualTasks[0];
-        if (!firstTask) return null;
-        return (
-          <VisualLesson
-            title={firstTask.title}
-            description={firstTask.description}
-            visualTasks={lesson.content.visualTasks}
             onComplete={onComplete}
           />
         );
@@ -161,8 +145,6 @@ function getLessonTypeLabel(type: string): string {
       return 'Flashcards';
     case 'scenario':
       return 'Real-world Scenario';
-    case 'visual':
-      return 'Visual Exercise';
     case 'chat_simulation':
       return 'Chat Simulation';
     default:

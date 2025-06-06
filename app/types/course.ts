@@ -26,7 +26,7 @@ export interface Achievement {
 export interface Lesson {
   id: string;
   title: string;
-  type: 'dialog' | 'cards' | 'scenario' | 'visual' | 'chat_simulation';
+  type: 'dialog' | 'cards' | 'scenario' | 'chat_simulation';
   duration: string;
   content: LessonContent;
   completed: boolean;
@@ -36,7 +36,6 @@ export interface LessonContent {
   introduction?: string;
   questions?: Question[];
   scenarios?: Scenario[];
-  visualTasks?: VisualTask[];
 }
 
 export interface Question {
@@ -54,21 +53,4 @@ export interface Scenario {
   options: string[];
   correctOption: number;
   explanation: string;
-}
-
-export interface VisualTask {
-  id: string;
-  title: string;
-  description: string;
-  image: string;
-  hotspots: Hotspot[];
-}
-
-export interface Hotspot {
-  id: string;
-  x: number;
-  y: number;
-  size: number;
-  title: string;
-  description: string;
 } 
