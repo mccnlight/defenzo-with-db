@@ -1,6 +1,5 @@
 # DEFENZO - Interactive Cybersecurity Learning Platform
 
-![DEFENZO Logo](assets/images/icon.png)
 
 DEFENZO is an interactive cybersecurity learning platform designed to help users master essential security concepts through hands-on exercises and real-world scenarios.
 
